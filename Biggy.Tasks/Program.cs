@@ -43,15 +43,14 @@ class Product {
       sw.Start();
       products.Save();
       sw.Stop();
-      
-      Console.Write(sw.ElapsedMilliseconds);
+
+      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
       sw.Reset();
 
       Console.WriteLine("Resetting...");
       products.ClearAndSave();
 
       Console.WriteLine("Writing 1000 records async");
-      products = new BiggyList<Product>();
       
       //1000 writes?
       for (int i = 0; i < 1000; i++) {
@@ -62,16 +61,31 @@ class Product {
       products.SaveAsync();
       sw.Stop();
 
-      Console.Write(sw.ElapsedMilliseconds);
+      Console.WriteLine("{0}ms",sw.ElapsedMilliseconds);
+      sw.Reset();
+
+
+      //1000 writes?
+      Console.WriteLine("Writing 1000 records with write happening in a loop");
+
+      sw.Start();
+      for (int i = 0; i < 1000; i++) {
+        var p = new Product { Sku = "SKU" + i, Name = "Steve", Price = 12.00M };
+        products.Add(p);
+        products.Save();
+      }
+      sw.Stop();
+
+      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
       sw.Reset();
 
 
       Console.WriteLine("Reading from records");
       sw.Start();
-      var p2 = products.Where(x => x.Sku == "SKUDDY22").FirstOrDefault();
+      var p2 = products.Where(x => x.Sku == "SKU22").FirstOrDefault();
       Console.WriteLine(p2.Sku);
       sw.Stop();
-      Console.Write(sw.ElapsedMilliseconds);
+      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
       
       
       
