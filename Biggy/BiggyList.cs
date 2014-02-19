@@ -179,8 +179,12 @@ namespace Biggy
       }
 
 
-      public Task<bool> SaveAsync() {
-        return Task.FromResult(this.Save());
+      public async Task SaveAsync() {
+        this.JSON = JsonConvert.SerializeObject(this);
+        var buff = Encoding.Default.GetBytes(this.JSON);
+        using (var fs = File.OpenWrite(this.DbPath)) {
+          await fs.WriteAsync(buff, 0, buff.Length);
+        }
       }
 
       public bool Save() {

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using Biggy.Extensions;
+using System.Diagnostics;
 
 namespace Biggy.Tasks {
 
@@ -31,28 +32,49 @@ class Product {
   class Program {
     static void Main(string[] args) {
 
-      Console.WriteLine("Writing 1000 records");
-      var started = DateTime.Now;
+      Console.WriteLine("Writing 1000 records sync");
+      var sw = new Stopwatch();
       var products = new BiggyList<Product>();
       //1000 writes?
       for (int i = 0; i < 1000; i++) {
         var p = new Product { Sku = "SKU"+ i, Name = "Steve", Price = 12.00M };
         products.Add(p);
       }
+      sw.Start();
       products.Save();
+      sw.Stop();
+      
+      Console.Write(sw.ElapsedMilliseconds);
+      sw.Reset();
 
-      var ended = DateTime.Now;
-      TimeSpan ts = ended - started;
-      Console.Write(ts.TotalMilliseconds);
+      Console.WriteLine("Resetting...");
+      products.ClearAndSave();
+
+      Console.WriteLine("Writing 1000 records async");
+      products = new BiggyList<Product>();
+      
+      //1000 writes?
+      for (int i = 0; i < 1000; i++) {
+        var p = new Product { Sku = "SKUDDY" + i, Name = "Steve", Price = 12.00M };
+        products.Add(p);
+      }
+      sw.Start();
+      products.SaveAsync();
+      sw.Stop();
+
+      Console.Write(sw.ElapsedMilliseconds);
+      sw.Reset();
 
 
       Console.WriteLine("Reading from records");
-      started = DateTime.Now;
-      var p2 = products.Where(x => x.Sku == "SKU22").FirstOrDefault();
+      sw.Start();
+      var p2 = products.Where(x => x.Sku == "SKUDDY22").FirstOrDefault();
       Console.WriteLine(p2.Sku);
-      ended = DateTime.Now;
-      ts = ended - started;
-      Console.Write(ts.TotalMilliseconds);
+      sw.Stop();
+      Console.Write(sw.ElapsedMilliseconds);
+      
+      
+      
       Console.Read();
 
     }

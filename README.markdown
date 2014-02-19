@@ -1,5 +1,7 @@
 # Biggy: SQLite for Documents and .NET
 
+This is just a goofy idea at this point, inspired by [NeDB](https://github.com/louischatriot/nedb) which is basically the same thing, but with Node.
+
 I like the idea of SQLite (a file-based relational data-store), but wouldn't it be fun to have this kind of thing for a Document database too? One nice thing about C# (among many) is the built-in
 LINQ stuff, another nice thing is that C# has Dynamics now too. **Biggy is simply an implementation if ICollection<T> with a JSON backing store**. I added a few helpy things 
 in there (like events and a few other things) and this might be completely dumb but I like the idea.
@@ -16,9 +18,13 @@ This does two things:
  - Creates a `Data` directory in your project root (you can override this) as well as a file called "clowns.json"
  - Creates an in-memory list that you can now query using LINQ like you always have (LINQ to Objects)
  
-It's a dead-simple idea and I looked everywhere for an implementation and couldn't find one, so I wrote it because... why not?
+You can also run this Async if you have a lot of writes:
 
-This is just a goofy idea at this point, inspired by [NeDB](https://github.com/louischatriot/nedb) which is basically the same thing, but with Node.
+```csharp
+dynamic db = new BiggyDB();
+db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
+db.Clowns.SaveAsync();
+```
 
 ## It's Not All Dynamic
 
@@ -54,6 +60,13 @@ Secondly - notice how `Equals()` is overridden here? This is so that IEnumerable
 you can use `Add()` and it acts like an Upsert.
 
 Basically what I'm saying is that **Biggy is simply a List implementation with disk persistence**.
+
+## Some Caveats
+
+Every time you instantiate a list, it tries to read it's data from disk. This is a one-time read on instantiation, but if you have a lot of data this can be a perf-killer (among other things). You may want to instantiate your list when your program starts up and then pass a reference to it throughout your app. 
+
+Each list type has it's own file for performance reasons. 
+
 
 ## What It's Good For
 
