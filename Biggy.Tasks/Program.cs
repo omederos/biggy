@@ -31,35 +31,30 @@ class Product {
   class Program {
     static void Main(string[] args) {
 
-      var p = new Product { Sku = "asdasd", Name = "Steve", Price = 12.00M };
-
-
+      Console.WriteLine("Writing 1000 records");
+      var started = DateTime.Now;
       var products = new BiggyList<Product>();
-      products.Saved += products_Saved;
-      //products.Remove(p);
-
-      products.Add(p);
+      //1000 writes?
+      for (int i = 0; i < 1000; i++) {
+        var p = new Product { Sku = "SKU"+ i, Name = "Steve", Price = 12.00M };
+        products.Add(p);
+      }
       products.Save();
 
+      var ended = DateTime.Now;
+      TimeSpan ts = ended - started;
+      Console.Write(ts.TotalMilliseconds);
 
-      dynamic db = new BiggyDB();
 
-      db.Klonks.Add(p);
-      db.Klonks.Save();
-
-      //using (dynamic db = new BiggyDB()) {
-      //  db.Floofs.Add(p);
-      //  db.Floofs.Save();
-      //}
-
-      //var db = new BiggyDB();
-      //db.Insert(thing);
+      Console.WriteLine("Reading from records");
+      started = DateTime.Now;
+      var p2 = products.Where(x => x.Sku == "SKU22").FirstOrDefault();
+      Console.WriteLine(p2.Sku);
+      ended = DateTime.Now;
+      ts = ended - started;
+      Console.Write(ts.TotalMilliseconds);
       Console.Read();
-    }
 
-    static void products_Saved(object sender, EventArgs e) {
-      var biggyEvents = (BiggyEventArgs<Product>)e;
-      Console.WriteLine("Hey we have {0}", biggyEvents.Items.Count);
     }
   }
 }
