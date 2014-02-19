@@ -13,11 +13,11 @@ namespace Tests {
 
     dynamic db;
     public Dynamics() {
-      db = new BiggyDB();
-      db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
-      db.Clowns.Save();
-
+db = new BiggyDB();
+db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
+db.Clowns.Save();
     }
+
     [Fact(DisplayName = "Returns a BiggyList of dynamic")]
     public void UsesBiggyListDynamic() {
       Assert.True(db.Clowns is BiggyList<dynamic>);

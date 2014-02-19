@@ -11,22 +11,22 @@ namespace Biggy.Tasks {
   //this is here as a bit of a playground... playing with the API etc...
 
 
-  class Product {
-    public String Sku { get; set; }
-    public String Name { get; set; }
-    public Decimal Price { get; set; }
-    public DateTime CreatedAt { get; set; }
+class Product {
+  public String Sku { get; set; }
+  public String Name { get; set; }
+  public Decimal Price { get; set; }
+  public DateTime CreatedAt { get; set; }
 
-    public Product() {
-      this.CreatedAt = DateTime.Now;
-    }
-
-    public override bool Equals(object obj) {
-      var p1 = (Product)obj;
-      return this.Sku == p1.Sku;
-    }
-
+  public Product() {
+    this.CreatedAt = DateTime.Now;
   }
+
+  public override bool Equals(object obj) {
+    var p1 = (Product)obj;
+    return this.Sku == p1.Sku;
+  }
+
+}
 
   class Program {
     static void Main(string[] args) {

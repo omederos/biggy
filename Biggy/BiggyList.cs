@@ -18,6 +18,7 @@ namespace Biggy
         this.Item = default(T);
       }
     }
+
     public class BiggyList<T> : ICollection<T> {
 
       List<T> _items = null;
@@ -25,6 +26,9 @@ namespace Biggy
       public bool InMemory { get; set; }
       public string DbFileName { get; set; }
       public string DbName { get; set; }
+      public string JSON { get; set; }
+      FileStream fs;
+
 
       public event EventHandler ItemRemoved;
       public event EventHandler ItemAdded;
@@ -43,6 +47,24 @@ namespace Biggy
           return File.Exists(DbPath);
         }
       }
+
+      public BiggyList(string dbPath = "current", bool inMemory = false, string dbName = "") {
+
+        this.InMemory = inMemory;
+
+        if (String.IsNullOrWhiteSpace(dbName)) {
+          var thingyType = this.GetType().GenericTypeArguments[0].Name;
+          this.DbName = Inflector.Inflector.Pluralize(thingyType).ToLower();
+        } else {
+          this.DbName = dbName.ToLower();
+        }
+        this.DbFileName = this.DbName + ".json";
+        this.SetDataDirectory(dbPath);
+        _items = TryLoadFileData(this.DbPath);
+
+      }
+
+
 
       public void SetDataDirectory(string dbPath) {
         if (dbPath == "current") {
@@ -65,8 +87,8 @@ namespace Biggy
 
         List<T> result = new List<T>();
         if (File.Exists(path)) {
-          var json = File.ReadAllText(path);
-          result = JsonConvert.DeserializeObject<List<T>>(json);
+          this.JSON = File.ReadAllText(path);
+          result = JsonConvert.DeserializeObject<List<T>>(this.JSON);
         }
 
         if (this.Loaded != null) {
@@ -82,21 +104,7 @@ namespace Biggy
         _items = TryLoadFileData(this.DbPath);
       }
 
-      public BiggyList(string dbPath = "current", bool inMemory = false, string dbName = "") {
-        
-        this.InMemory = inMemory;
 
-        if (String.IsNullOrWhiteSpace(dbName)) {
-          var thingyType = this.GetType().GenericTypeArguments[0].Name;
-          this.DbName = Inflector.Inflector.Pluralize(thingyType).ToLower();
-        } else {
-          this.DbName = dbName.ToLower();
-        }
-        this.DbFileName = this.DbName + ".json";
-        this.SetDataDirectory(dbPath);
-        _items = TryLoadFileData(this.DbPath);
-
-      }
 
       public void Add(T item) {
 
@@ -180,8 +188,8 @@ namespace Biggy
         try {
           if (!String.IsNullOrWhiteSpace(this.DbDirectory)) {
             //write it to disk
-            var json = JsonConvert.SerializeObject(this);
-            File.WriteAllText(this.DbPath, json);
+            this.JSON = JsonConvert.SerializeObject(this);
+            File.WriteAllText(this.DbPath, this.JSON);
           }
           if (this.Saved != null) {
             var args = new BiggyEventArgs<T>();
