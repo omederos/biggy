@@ -1,7 +1,8 @@
 # Biggy: SQLite for Documents and .NET
 
 I like the idea of SQLite (a file-based relational data-store), but wouldn't it be fun to have this kind of thing for a Document database too? One nice thing about C# (among many) is the built-in
-LINQ stuff, another nice thing is that C# has Dynamics now too. **Biggy is simply an implementation if ICollection<T> with a JSON backing store**.
+LINQ stuff, another nice thing is that C# has Dynamics now too. **Biggy is simply an implementation if ICollection<T> with a JSON backing store**. I added a few helpy things 
+in there (like events and a few other things) and this might be completely dumb but I like the idea.
 
 Toss LINQ and Dynamics into a bowl, sprinkle with some JSON serialization and you have Biggy:
 
@@ -42,7 +43,7 @@ class Product {
 
 //add and save to this list as above
 var products = new BiggyList<Product>();
-``
+```
 
 The list infers a few things for you:
 
