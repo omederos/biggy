@@ -3,7 +3,7 @@
 This is just a goofy idea at this point, inspired by [NeDB](https://github.com/louischatriot/nedb) which is basically the same thing, but with Node.
 
 I like the idea of SQLite (a file-based relational data-store), but wouldn't it be fun to have this kind of thing for a Document database too? One nice thing about C# (among many) is the built-in
-LINQ stuff, another nice thing is that C# has Dynamics now too. **Biggy is simply an implementation if ICollection<T> with a JSON backing store**. I added a few helpy things 
+LINQ stuff, another nice thing is that C# has Dynamics now too. **Biggy is simply an implementation of ICollection<T> with a JSON backing store**. I added a few helpy things 
 in there (like events and a few other things) and this might be completely dumb but I like the idea.
 
 Toss LINQ and Dynamics into a bowl, sprinkle with some JSON serialization and you have Biggy:

@@ -204,7 +204,7 @@ namespace Biggy
 
         } catch (Exception x) {
           //log it?
-          throw x;
+          throw;
         }
 
       }
