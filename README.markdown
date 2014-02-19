@@ -78,6 +78,15 @@ management - which can be tricky.
 
 That makes Biggy compelling for high-read situations, such as a blog, product catalog, etc. At least that's what I've used NeDB for and it works great.
 
+## Performance
+
+In the Tasks project (a Console app) there are simple loops that write 1000 records to disk at once (in a batch) as well as a simple read. You can see the results for yourself... they are OK.
+
+Writing 1000 records in a batch takes about 30ms (give or take), writing in a loop takes about 4 seconds (!), but reading records out is too small to record :):):).
+
+There's a lot to do to make this a bit more functional, but for now it does what I envisioned.
+
+
 ## Wanna Help?
 
 Please do! This is rough stuff that I put together one morning just wondering if I could do it. I'd love your help if you're game.

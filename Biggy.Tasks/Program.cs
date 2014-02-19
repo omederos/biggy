@@ -72,6 +72,7 @@ class Product {
       for (int i = 0; i < 1000; i++) {
         var p = new Product { Sku = "SKU" + i, Name = "Steve", Price = 12.00M };
         products.Add(p);
+        //bad idea... run it and see why
         products.Save();
       }
       sw.Stop();
