@@ -19,6 +19,9 @@ namespace Biggy {
     }
 
     public void Dispose() {
+		if (CurrentList == null)
+			return;
+
       CurrentList.Clear();
       CurrentList = null;
     }
