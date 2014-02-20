@@ -203,8 +203,10 @@ namespace Biggy
         try {
           if (!String.IsNullOrWhiteSpace(this.DbDirectory)) {
             //write it to disk
-            this.JSON = JsonConvert.SerializeObject(this);
-            File.WriteAllText(this.DbPath, this.JSON);
+            var serializer = new JsonSerializer();
+            using (var fs = File.CreateText(this.DbPath)) {
+              serializer.Serialize(fs, this);
+            }
           }
           if (this.Saved != null) {
             var args = new BiggyEventArgs<T>();

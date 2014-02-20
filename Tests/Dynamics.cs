@@ -13,9 +13,9 @@ namespace Tests {
 
     dynamic db;
     public Dynamics() {
-db = new BiggyDB();
-db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
-db.Clowns.Save();
+      db = new BiggyDB();
+      db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
+      db.Clowns.Save();
     }
 
     [Fact(DisplayName = "Returns a BiggyList of dynamic")]
@@ -33,10 +33,5 @@ db.Clowns.Save();
 
     }
 
-	[Fact(DisplayName = "Ensure that not using the BiggyDB object doesn't result in an exception")]
-	public void NotUsingDbThrowsNullReference() {
-		using (var db = new BiggyDB())
-		{ }
-	}
   }
 }
