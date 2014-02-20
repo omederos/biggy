@@ -16,6 +16,5 @@ namespace Biggy {
       result = _existing;
       return true;
     }
-
   }
 }

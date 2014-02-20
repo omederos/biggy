@@ -32,5 +32,11 @@ db.Clowns.Save();
       Assert.True(db2.Clowns.Count > 0);
 
     }
+
+	[Fact(DisplayName = "Ensure that not using the BiggyDB object doesn't result in an exception")]
+	public void NotUsingDbThrowsNullReference() {
+		using (var db = new BiggyDB())
+		{ }
+	}
   }
 }
