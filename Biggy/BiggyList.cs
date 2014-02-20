@@ -26,7 +26,6 @@ namespace Biggy
       public bool InMemory { get; set; }
       public string DbFileName { get; set; }
       public string DbName { get; set; }
-      public string JSON { get; set; }
       FileStream fs;
 
 
@@ -91,8 +90,8 @@ namespace Biggy
 
         List<T> result = new List<T>();
         if (File.Exists(path)) {
-          this.JSON = File.ReadAllText(path);
-          result = JsonConvert.DeserializeObject<List<T>>(this.JSON);
+          var json = File.ReadAllText(path);
+          result = JsonConvert.DeserializeObject<List<T>>(json);
         }
 
         if (this.Loaded != null) {
@@ -191,8 +190,8 @@ namespace Biggy
 
 
       public async Task SaveAsync() {
-        this.JSON = JsonConvert.SerializeObject(this);
-        var buff = Encoding.Default.GetBytes(this.JSON);
+        var json = JsonConvert.SerializeObject(this);
+        var buff = Encoding.Default.GetBytes(json);
         using (var fs = File.OpenWrite(this.DbPath)) {
           await fs.WriteAsync(buff, 0, buff.Length);
         }
