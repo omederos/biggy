@@ -61,6 +61,60 @@ you can use `Add()` and it acts like an Upsert.
 
 Basically what I'm saying is that **Biggy is simply a List implementation with disk persistence**.
 
+## Some Sample Web Code
+
+There's a sample web app in the repo - have a look. I've scaffolded out `Product` for you so you can see a working example. The first step is to create a DB wrapper class. Since we're using in-memory lists, a static wrapper with static properties should work well so we're not hitting the disk constantly:
+
+```csharp
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using Biggy;
+
+namespace Web.Models {
+  
+  public static class DB {
+
+    static BiggyList<Product> _products;
+    static BiggyList<Customer> _customers;
+
+    public static void Load(string appPath) {
+      _products = new BiggyList<Product>(dbPath : appPath);
+      _customers = new BiggyList<Customer>(dbPath: appPath);
+    }
+
+    public static BiggyList<Product> Products {
+      get {
+        return _products;
+      }
+    }
+    public static BiggyList<Customer> Customers {
+      get {
+        return _customers;
+      }
+    }
+  }
+}
+```
+
+Here I've added a "Load" routine that you can call explicitly when your app starts. This will load all data on disk (which is a pretty fast read) and you're off to the the races.
+
+Biggy won't know which directory to use and will default to the current execution path - so you'll want to set that. You can use Global.asax in `App_Start` if you like:
+
+```csharp
+protected void Application_Start()
+{
+    //...
+    DB.Load(HttpRuntime.AppDomainAppPath);
+}
+```
+
+This will send in your current web root, and you'll be good to go.
+
+
+
 ## Some Caveats
 
 Every time you instantiate a list, it tries to read it's data from disk. This is a one-time read on instantiation, but if you have a lot of data this can be a perf-killer (among other things). You may want to instantiate your list when your program starts up and then pass a reference to it throughout your app. 
