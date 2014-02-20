@@ -7,20 +7,15 @@ using System.Threading.Tasks;
 
 namespace Biggy {
   
-  public class BiggyDB : DynamicObject, IDisposable {
+  public class BiggyDB : DynamicObject {
 
-    BiggyList<dynamic> CurrentList { get; set; }
-
+    BiggyList<dynamic> _existing;
     public override bool TryGetMember(GetMemberBinder binder, out object result) {
       //return base.TryGetMember(binder, out result);
-      CurrentList = CurrentList ??  new BiggyList<dynamic>(dbName: binder.Name);
-      result = CurrentList;
+      _existing = _existing ?? new BiggyList<dynamic>(dbName: binder.Name);
+      result = _existing;
       return true;
     }
 
-    public void Dispose() {
-      CurrentList.Clear();
-      CurrentList = null;
-    }
   }
 }

@@ -12,32 +12,38 @@ namespace Biggy.Tasks {
   //this is here as a bit of a playground... playing with the API etc...
 
 
-class Product {
-  public String Sku { get; set; }
-  public String Name { get; set; }
-  public Decimal Price { get; set; }
-  public DateTime CreatedAt { get; set; }
+  class Product {
+    public String Sku { get; set; }
+    public String Name { get; set; }
+    public Decimal Price { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-  public Product() {
-    this.CreatedAt = DateTime.Now;
+    public Product() {
+      this.CreatedAt = DateTime.Now;
+    }
+
+    public override bool Equals(object obj) {
+      var p1 = (Product)obj;
+      return this.Sku == p1.Sku;
+    }
+
   }
 
-  public override bool Equals(object obj) {
-    var p1 = (Product)obj;
-    return this.Sku == p1.Sku;
-  }
-
-}
 
   class Program {
     static void Main(string[] args) {
 
+
+    }
+
+    void RunBenchmarks() {
       Console.WriteLine("Writing 1000 records sync");
       var sw = new Stopwatch();
       var products = new BiggyList<Product>();
+
       //1000 writes?
       for (int i = 0; i < 1000; i++) {
-        var p = new Product { Sku = "SKU"+ i, Name = "Steve", Price = 12.00M };
+        var p = new Product { Sku = "SKU" + i, Name = "Steve", Price = 12.00M };
         products.Add(p);
       }
       sw.Start();
@@ -51,7 +57,7 @@ class Product {
       products.ClearAndSave();
 
       Console.WriteLine("Writing 1000 records async");
-      
+
       //1000 writes?
       for (int i = 0; i < 1000; i++) {
         var p = new Product { Sku = "SKUDDY" + i, Name = "Steve", Price = 12.00M };
@@ -61,7 +67,7 @@ class Product {
       products.SaveAsync();
       sw.Stop();
 
-      Console.WriteLine("{0}ms",sw.ElapsedMilliseconds);
+      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
       sw.Reset();
 
 
@@ -87,11 +93,10 @@ class Product {
       Console.WriteLine(p2.Sku);
       sw.Stop();
       Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
-      
-      
-      
-      Console.Read();
 
+
+
+      Console.Read();
     }
   }
 }

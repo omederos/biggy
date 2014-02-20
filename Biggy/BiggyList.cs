@@ -67,15 +67,19 @@ namespace Biggy
 
 
       public void SetDataDirectory(string dbPath) {
+        var dataDir = dbPath;
         if (dbPath == "current") {
           var currentDir = Directory.GetCurrentDirectory();
           if (currentDir.EndsWith("Debug") || currentDir.EndsWith("Release")) {
             var projectRoot = Directory.GetParent(@"..\..\").FullName;
-            var dataDir = Path.Combine(projectRoot, "Data");
-            Directory.CreateDirectory(dataDir);
-            this.DbDirectory = dataDir;
+            dataDir = Path.Combine(projectRoot, "Data");
           }
+        } else {
+          dataDir = Path.Combine(dbPath, "Data");
         }
+        Directory.CreateDirectory(dataDir);
+        this.DbDirectory = dataDir;
+
       }
 
       public void ClearAndSave() {
@@ -104,16 +108,23 @@ namespace Biggy
         _items = TryLoadFileData(this.DbPath);
       }
 
+      public void Update(T item) {
+        var index = _items.IndexOf(item);
+        if (index > -1) {
+          _items.RemoveAt(index);
+          _items.Insert(index, item);
+        } else {
+          Add(item);
+        }
 
+      }
 
       public void Add(T item) {
 
         if (_items.Contains(item)) {
           //let's not overwrite -- this will be determined by
           //item.Equals()
-          var index = _items.IndexOf(item);
-          _items.RemoveAt(index);
-          _items.Insert(index, item);
+          Update(item);
         } else {
           _items.Add(item);
         }
