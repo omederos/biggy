@@ -57,13 +57,13 @@ namespace Biggy {
       public void Update(T item) {
         var index = _items.IndexOf(item);
         if (index > -1) {
+          this.Model.Update(item, this.Model.GetPrimaryKey(item));
           _items.RemoveAt(index);
           _items.Insert(index, item);
-          this.Model.Update(item, this.Model.GetPrimaryKey(item));
 
         } else {
-          Add(item);
           this.Model.Insert(item);
+          Add(item);
 
         }
 
@@ -76,8 +76,8 @@ namespace Biggy {
           //item.Equals()
           this.Update(item);
         } else {
-          _items.Add(item);
           this.Model.Insert(item);
+          _items.Add(item);
         }
 
         //_items.Add(item);

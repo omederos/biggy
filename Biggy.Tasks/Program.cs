@@ -21,6 +21,11 @@ namespace Biggy.Tasks {
     }
 
   }
+  class OrderDetail {
+    public decimal UnitPrice { get; set; }
+    public int Quantity { get; set; }
+    public int OrderDetailID { get; set; }
+  }
 
   class Product {
     public String Sku { get; set; }
@@ -47,6 +52,7 @@ namespace Biggy.Tasks {
     }
 
     static void WhatWhat() {
+
       var sw = new Stopwatch();
       sw.Start();
       var products = new MassiveList<NWProduct>(connectionStringName: "northwind", tableName: "products", primaryKeyName: "productid");
@@ -63,8 +69,12 @@ namespace Biggy.Tasks {
       sw.Stop();
 
       Console.WriteLine("Read single in " + sw.ElapsedMilliseconds + "ms");
+      sw.Reset();
+      sw.Start();
+      var details = new MassiveList<OrderDetail>(connectionStringName: "northwind", tableName: "orderdetails", primaryKeyName: "orderdetailid");
+      sw.Stop();
 
-
+      Console.WriteLine("Read " + details.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
 
 
       Console.Read();
