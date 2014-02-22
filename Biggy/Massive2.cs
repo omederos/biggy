@@ -482,6 +482,10 @@ namespace Massive
           var stub = "INSERT INTO {0} ({1}) \r\n VALUES ({2})";
           result = CreateCommand(stub, null);
           int counter = 0;
+          if (PkIsIdentityColumn)
+          {
+              settings.Remove(PrimaryKeyField);
+          }
           foreach (var item in settings)
           {
               sbKeys.AppendFormat("{0},", item.Key);
@@ -491,8 +495,8 @@ namespace Massive
           }
           if (counter > 0)
           {
-              var keys = sbKeys.ToString(0, sbKeys.Length - 1);
-              var vals = sbVals.ToString(0, sbVals.Length - 1);
+              var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 1);
+              var vals = sbVals.ToString().Substring(0, sbVals.Length - 1);
               var sql = string.Format(stub, TableName, keys, vals);
               result.CommandText = sql;
           }
