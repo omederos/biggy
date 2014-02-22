@@ -9,16 +9,6 @@ using Newtonsoft.Json;
 namespace Biggy
 {
 
-    public class BiggyEventArgs<T> : EventArgs{
-      public List<T> Items { get; set; }
-      public dynamic Item { get; set; }
-
-      public BiggyEventArgs() {
-        Items = new List<T>();
-        this.Item = default(T);
-      }
-    }
-
     public class BiggyList<T> : ICollection<T> {
 
       List<T> _items = null;
@@ -81,7 +71,7 @@ namespace Biggy
 
       }
 
-      public void ClearAndSave() {
+      public void Purge() {
         this.Clear();
         this.Save();
       }
@@ -190,10 +180,17 @@ namespace Biggy
 
 
       public async Task SaveAsync() {
-        var json = JsonConvert.SerializeObject(this);
-        var buff = Encoding.Default.GetBytes(json);
-        using (var fs = File.OpenWrite(this.DbPath)) {
-          await fs.WriteAsync(buff, 0, buff.Length);
+        if (!this.InMemory) {
+          var json = JsonConvert.SerializeObject(this);
+          var buff = Encoding.Default.GetBytes(json);
+          using (var fs = File.OpenWrite(this.DbPath)) {
+            await fs.WriteAsync(buff, 0, buff.Length);
+          }
+        }
+        if (this.Saved != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Items = _items;
+          this.Saved.Invoke(this, args);
         }
       }
 

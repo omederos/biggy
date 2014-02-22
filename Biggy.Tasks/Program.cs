@@ -54,7 +54,7 @@ namespace Biggy.Tasks {
       sw.Reset();
 
       Console.WriteLine("Resetting...");
-      products.ClearAndSave();
+      products.Purge();
 
       Console.WriteLine("Writing 1000 records async");
 

@@ -23,7 +23,7 @@ namespace Tests
       _products = new BiggyList<Product>();
 
       //empty the db
-      _products.ClearAndSave();
+      _products.Purge();
 
 
       test1 = new Product { Sku = "XXX", Name = "Steve's Stuffs", Price = 100.00M };
@@ -60,7 +60,7 @@ namespace Tests
 
     [Fact(DisplayName = "Won't duplicate same item as determined by Equals")]
     public void WontDuplicate() {
-      _products.ClearAndSave();
+      _products.Purge();
       _products.Add(test1);
 
       Assert.True(_products.Count == 1);
@@ -77,7 +77,7 @@ namespace Tests
 
     [Fact(DisplayName = "Updating just works")]
     public void UpdatingJustWorks() {
-      _products.ClearAndSave();
+      _products.Purge();
       _products.Add(test1);
 
       var p = _products.First();
