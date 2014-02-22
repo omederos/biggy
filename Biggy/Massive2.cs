@@ -177,11 +177,12 @@ namespace Massive
           return dm;
       }
       public DynamicModel(string connectionStringName, string tableName = "",
-          string primaryKeyField = "", string descriptorField = "")
+          string primaryKeyField = "", string descriptorField = "", bool pkIsIdentityColumn = true)
       {
           TableName = tableName == "" ? this.GetType().Name : tableName;
           PrimaryKeyField = string.IsNullOrEmpty(primaryKeyField) ? "ID" : primaryKeyField;
           DescriptorField = descriptorField;
+          PkIsIdentityColumn = pkIsIdentityColumn;
           var _providerName = "System.Data.SqlClient";
 
           _factory = DbProviderFactories.GetFactory(_providerName);
@@ -366,6 +367,7 @@ namespace Massive
           o.ToDictionary().TryGetValue(PrimaryKeyField, out result);
           return result;
       }
+      public virtual bool PkIsIdentityColumn { get; set; }
       public virtual string TableName { get; set; }
       /// <summary>
       /// Returns all records complying with the passed-in WHERE clause and arguments, 
