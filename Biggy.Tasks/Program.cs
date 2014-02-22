@@ -10,7 +10,17 @@ using System.Diagnostics;
 namespace Biggy.Tasks {
 
   //this is here as a bit of a playground... playing with the API etc...
+  class NWProduct {
+    public Guid Sku { get; set; }
+    public String ProductName { get; set; }
+    public Decimal UnitPrice { get; set; }
 
+    public override bool Equals(object obj) {
+      var p1 = (Product)obj;
+      return this.Sku.Equals(p1.Sku);
+    }
+
+  }
 
   class Product {
     public String Sku { get; set; }
@@ -32,11 +42,35 @@ namespace Biggy.Tasks {
 
   class Program {
     static void Main(string[] args) {
-
+      WhatWhat();
 
     }
 
-    void RunBenchmarks() {
+    static void WhatWhat() {
+      var sw = new Stopwatch();
+      sw.Start();
+      var products = new MassiveList<NWProduct>(connectionStringName: "northwind", tableName: "products", primaryKeyName: "productid");
+      sw.Stop();
+      Console.WriteLine("Read " + products.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
+      foreach (var p in products) {
+        Console.WriteLine(p.Sku);
+      }
+
+      sw.Reset();
+      sw.Start();
+      var readOne = products.FirstOrDefault(x => x.ProductName == "Product24");
+      Console.WriteLine(readOne.ProductName);
+      sw.Stop();
+
+      Console.WriteLine("Read single in " + sw.ElapsedMilliseconds + "ms");
+
+
+
+
+      Console.Read();
+    }
+
+    static void RunBenchmarks() {
       Console.WriteLine("Writing 1000 records sync");
       var sw = new Stopwatch();
       var products = new BiggyList<Product>();

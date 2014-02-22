@@ -25,7 +25,7 @@ namespace Biggy {
 
       public MassiveList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") {
         this.ConnectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
-        if (String.IsNullOrWhiteSpace(tableName)) {
+        if (tableName!="guess") {
           this.TableName = tableName;
         } else {
           var thingyType = this.GetType().GenericTypeArguments[0].Name;
