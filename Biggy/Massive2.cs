@@ -505,6 +505,71 @@ namespace Massive
           else throw new InvalidOperationException("Can't parse this object to the database - there are no properties set");
           return result;
       }
+      public virtual List<DbCommand> CreateInsertBatchCommands(List<object> newRecords)
+      {
+          // The magic SQL Server Parameter Limit:
+          var MAGIC_PARAMETER_LIMIT = 2100;
+          int paramCounter = 0;
+          var commands = new List<DbCommand>();
+
+          // We need a sample to grab the object schema:
+          var first = newRecords.First().ToExpando();
+          var schema = (IDictionary<string, object>)first;
+
+          // Remove identity column - "can't touch this..."
+          if (PkIsIdentityColumn)
+          {
+              schema.Remove(PrimaryKeyField);
+          }
+
+          var sbFieldNames = new StringBuilder();
+          foreach (var field in schema)
+          {
+              sbFieldNames.AppendFormat("{0},", field.Key);
+          }
+          var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
+
+          // Get the core of the INSERT statement, then append each set of field params per record:
+          var sqlStub = string.Format("INSERT INTO {0} ({1}) VALUES ", TableName, keys);
+          var sbSql = new StringBuilder(sqlStub);
+          var dbCommand = CreateCommand("", null);
+
+          foreach (var item in newRecords)
+          {
+              // Things explode if you exceed the param limit for SQL Server:
+              if (paramCounter + schema.Count >= MAGIC_PARAMETER_LIMIT)
+              {
+                  // Add the current command to the list, then start over with another:
+                  dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+                  commands.Add(dbCommand);
+                  sbSql = new StringBuilder(sqlStub);
+                  paramCounter = 0;
+                  dbCommand = CreateCommand("", null);
+              }
+
+              var ex = item.ToExpando();
+
+              // Can't insert against an Identity field:
+              var itemSchema = (IDictionary<string, object>)ex;
+              if (PkIsIdentityColumn)
+              {
+                  itemSchema.Remove(PrimaryKeyField);
+              }
+
+              var sbParamGroup = new StringBuilder();
+              foreach (var fieldValue in itemSchema.Values)
+              {
+                  sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
+                  dbCommand.AddParam(fieldValue);
+                  paramCounter++;
+              }
+              // Make a whole record to insert:
+              sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
+          }
+          dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+          commands.Add(dbCommand);
+          return commands;
+      }
       /// <summary>
       /// Creates a command for use with transactions - internal stuff mostly, but here for you to play with
       /// </summary>
