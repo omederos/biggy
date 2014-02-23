@@ -45,6 +45,8 @@
     <Compile Include="Dynamics.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Massive.cs" />
+    <Compile Include="MassiveList.cs" />
+    <Compile Include="MassiveSetup.cs" />
     <Compile Include="Reads.cs" />
     <Compile Include="Writes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
