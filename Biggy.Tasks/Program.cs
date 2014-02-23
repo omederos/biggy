@@ -47,38 +47,41 @@ namespace Biggy.Tasks {
 
   class Program {
     static void Main(string[] args) {
-      WhatWhat();
+      //WhatWhat();
+        var massiveTasks = new MassiveTasks();
+        massiveTasks.RunBenchmarks();
+        Console.Read();
 
     }
 
-    static void WhatWhat() {
+    //static void WhatWhat() {
 
-      var sw = new Stopwatch();
-      sw.Start();
-      var products = new MassiveList<NWProduct>(connectionStringName: "northwind", tableName: "products", primaryKeyName: "productid");
-      sw.Stop();
-      Console.WriteLine("Read " + products.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
-      foreach (var p in products) {
-        Console.WriteLine(p.Sku);
-      }
+    //  var sw = new Stopwatch();
+    //  sw.Start();
+    //  var products = new MassiveList<NWProduct>(connectionStringName: "northwind", tableName: "products", primaryKeyName: "productid");
+    //  sw.Stop();
+    //  Console.WriteLine("Read " + products.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
+    //  foreach (var p in products) {
+    //    Console.WriteLine(p.Sku);
+    //  }
 
-      sw.Reset();
-      sw.Start();
-      var readOne = products.FirstOrDefault(x => x.ProductName == "Product24");
-      Console.WriteLine(readOne.ProductName);
-      sw.Stop();
+    //  sw.Reset();
+    //  sw.Start();
+    //  var readOne = products.FirstOrDefault(x => x.ProductName == "Product24");
+    //  Console.WriteLine(readOne.ProductName);
+    //  sw.Stop();
 
-      Console.WriteLine("Read single in " + sw.ElapsedMilliseconds + "ms");
-      sw.Reset();
-      sw.Start();
-      var details = new MassiveList<OrderDetail>(connectionStringName: "northwind", tableName: "orderdetails", primaryKeyName: "orderdetailid");
-      sw.Stop();
+    //  Console.WriteLine("Read single in " + sw.ElapsedMilliseconds + "ms");
+    //  sw.Reset();
+    //  sw.Start();
+    //  var details = new MassiveList<OrderDetail>(connectionStringName: "northwind", tableName: "orderdetails", primaryKeyName: "orderdetailid");
+    //  sw.Stop();
 
-      Console.WriteLine("Read " + details.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
+    //  Console.WriteLine("Read " + details.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
 
 
-      Console.Read();
-    }
+    //  Console.Read();
+    //}
 
     static void RunBenchmarks() {
       Console.WriteLine("Writing 1000 records sync");
