@@ -663,6 +663,38 @@ namespace Massive
           }
       }
       /// <summary>
+      /// Inserts a large range - does not check for existing entires, and assumes all 
+      /// included records are new records. Order of magnitude more performant than standard
+      /// Insert method for multiple sequential inserts. 
+      /// </summary>
+      /// <param name="items"></param>
+      /// <returns></returns>
+      public virtual int BulkInsert<T>(List<T> items)
+      {
+          var first = items.First();
+          var ex = first.ToExpando();
+          var itemSchema = (IDictionary<string, object>)ex;
+          var itemParameterCount = itemSchema.Values.Count();
+          var requiredParams = items.Count * itemParameterCount;
+          var batchCounter = requiredParams / 2000;
+
+          var rowsAffected = 0;
+          if (items.Count() > 0)
+          {
+              using (dynamic conn = OpenConnection())
+              {
+                  var commands = CreateInsertBatchCommands(items);
+                  foreach (var cmd in commands)
+                  {
+                      cmd.Connection = conn;
+                      rowsAffected += cmd.ExecuteNonQuery();
+                  }
+              }
+          }
+          return rowsAffected;
+      }
+
+      /// <summary>
       /// Updates a record in the database. You can pass in an Anonymous object, an ExpandoObject,
       /// A regular old POCO, or a NameValueCollection from a Request.Form or Request.QueryString
       /// </summary>
