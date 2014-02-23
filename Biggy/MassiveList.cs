@@ -94,6 +94,13 @@ namespace Biggy {
         }
       }
 
+      public int AddRange(List<T> items)
+      {
+          int affected = this.Model.BulkInsert(items);
+          this.Reload();
+          return affected;
+      }
+      
       public void Clear() {
         _items.Clear();
         this.Model.DeleteWhere("");
