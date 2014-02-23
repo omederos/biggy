@@ -170,6 +170,31 @@ namespace Massive
     }
 
     /// <summary>
+    /// Conventionally introspects the object passed in for a field that 
+    /// looks like a PK. If you've named your PrimaryKeyField, this becomes easy
+    /// </summary>
+    public virtual bool HasPrimaryKey(object o)
+    {
+      return o.ToDictionary().ContainsKey(PrimaryKeyField);
+    }
+
+    /// <summary>
+    /// If the object passed in has a property with the same name as your PrimaryKeyField
+    /// it is returned here.
+    /// </summary>
+    public virtual object GetPrimaryKey(object o)
+    {
+      object result = null;
+      o.ToDictionary().TryGetValue(PrimaryKeyField, out result);
+      return result;
+    }
+
+    public virtual string PrimaryKeyField { get; set; }
+    public virtual bool PkIsIdentityColumn { get; set; }
+    public virtual string TableName { get; set; }
+    public string DescriptorField { get; protected set; }
+
+    /// <summary>
     /// Gets a default value for the column
     /// </summary>
     public dynamic DefaultValue(dynamic column) {
@@ -188,8 +213,6 @@ namespace Massive
       }
       return result;
     }
-
-    public string DescriptorField { get; protected set; }
 
     /// <summary>
     /// Enumerates the reader yielding the result - thanks to Jeroen Haegebaert
@@ -307,29 +330,6 @@ namespace Massive
       }
       return result;
     }
-
-    public virtual string PrimaryKeyField { get; set; }
-
-    /// <summary>
-    /// Conventionally introspects the object passed in for a field that 
-    /// looks like a PK. If you've named your PrimaryKeyField, this becomes easy
-    /// </summary>
-    public virtual bool HasPrimaryKey(object o) {
-      return o.ToDictionary().ContainsKey(PrimaryKeyField);
-    }
-
-    /// <summary>
-    /// If the object passed in has a property with the same name as your PrimaryKeyField
-    /// it is returned here.
-    /// </summary>
-    public virtual object GetPrimaryKey(object o) {
-      object result = null;
-      o.ToDictionary().TryGetValue(PrimaryKeyField, out result);
-      return result;
-    }
-
-    public virtual bool PkIsIdentityColumn { get; set; }
-    public virtual string TableName { get; set; }
 
     /// <summary>
     /// Returns all records complying with the passed-in WHERE clause and arguments, 
