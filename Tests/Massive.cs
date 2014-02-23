@@ -1,0 +1,305 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Biggy;
+using Biggy.Massive;
+using Xunit;
+
+namespace Tests
+{
+  public class Transaction
+  {
+    public int TransactionId { get; set; }
+    public decimal Amount { get; set; }
+    public string Comment { get; set; }
+    public string Identifier { get; set; }
+  }
+
+  [Trait("Massive", "")]
+  public class Massive
+  {
+    static string _connectionStringName = "northwind";
+    static string _testTableName = "Transactions";
+    static string _tablePkColumn = "TransactionId";
+    DynamicModel _model = null;
+
+    // So each test can run independently:
+    void CheckSetUp()
+    {
+      bool exists = this.TransactionTableExists();
+      if (!exists)
+      {
+        this.CreateTransctionTable();
+        exists = this.TransactionTableExists();
+      }
+      else
+      {
+        this.DropTransctionTable();
+        this.CreateTransctionTable();
+        exists = this.TransactionTableExists();
+      }
+    }
+
+
+    [Fact(DisplayName = "Connects to the Sample Db from App_Config")]
+    public void _Connects_To_Sample_Db()
+    {
+      _model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var cn = _model.OpenConnection();
+      Assert.True(cn != null && cn.State == System.Data.ConnectionState.Open);
+      cn.Close();
+      cn.Dispose();
+    }
+
+    [Fact(DisplayName = "Test Table Exists")]
+    public void _Test_Table_Exists()
+    {
+      bool exists = this.TransactionTableExists();
+      if(!exists)
+      {
+        this.CreateTransctionTable();
+        exists = this.TransactionTableExists();
+      }
+      else
+      {
+        this.DropTransctionTable();
+        this.CreateTransctionTable();
+        exists = this.TransactionTableExists();
+      }
+      Assert.True(exists);
+    }
+
+    [Fact(DisplayName = "Inserts a Single Strongly-Typed Record")]
+    public void _Inserts_Single_Typed_Record()
+    {
+      this.CheckSetUp();
+      var newRecord = new Transaction()
+      {
+        Amount = 100,
+        Comment = "I Overspent!",
+        Identifier = "XXX"
+      };
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var inserted = model.Insert(newRecord);
+      Assert.True(newRecord.TransactionId > 0);     
+    }
+
+
+    [Fact(DisplayName = "Inserts a Single Anonymous Record")]
+    public void _Inserts_Single_Anonymous_Record()
+    {
+      this.CheckSetUp();
+      dynamic newRecord = new
+      {
+        Amount = 100,
+        Comment = "I Anonymously Overspent!",
+        Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
+      };
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var inserted = model.Insert(newRecord);
+      Assert.True(inserted.TransactionId > 0);
+    }
+
+
+    [Fact(DisplayName = "Inserts 12 metric crap-loads of new records")]
+    public void _Inserts_Bulk_Records()
+    {
+      this.CheckSetUp();
+      int qty = 10000;
+      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      int inserted = model.BulkInsert(newTransactions);
+      Assert.True(inserted == qty);
+    }
+
+    [Fact(DisplayName = "Updates a Strongly-typed record")]
+    public void _Updates_Typed_Record()
+    {
+      this.CheckSetUp();
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new Transaction()
+      {
+        Amount = 100,
+        Comment = "I Overspent!",
+        Identifier = "XXX"
+      };
+
+      // Dump the new record in as an UPDATE:
+      model.Insert(newRecord);
+      int recordPk = newRecord.TransactionId;
+
+      string newValue = "I changed it!";
+      newRecord.Identifier = newValue;
+      int updated = model.Update(newRecord);
+
+      newRecord = model.Find<Transaction>(recordPk);
+
+      Assert.True(updated > 0 && newRecord.Identifier == newValue);
+    }
+
+
+    [Fact(DisplayName = "Updates an Anonymously-typed record")]
+    public void _Updates_Anonymous_Record()
+    {
+      this.CheckSetUp();
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new
+      {
+        Amount = 100,
+        Comment = "I Anonymously Overspent!",
+        Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah da da . . .
+      };
+      var result = model.Insert(newRecord);
+      int recordPk = result.TransactionId;
+
+      var updateThis = new
+      {
+        Identifier = "I changed it!"
+      };
+      int updated = model.Update(updateThis, recordPk);
+
+      // Retrieve the updated item from the Db:
+      var updatedRecord = model.Find(recordPk);
+
+      Assert.True(updated > 0 && updatedRecord.Identifier == updateThis.Identifier);
+    }
+
+
+    [Fact(DisplayName = "Deletes a Strongly-typed record")]
+    public void _Deletes_Typed_Record()
+    {
+      this.CheckSetUp();
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new Transaction()
+      {
+        Amount = 100,
+        Comment = "I Overspent!",
+        Identifier = "XXX"
+      };
+      model.Insert(newRecord);
+      int recordPk = newRecord.TransactionId;
+
+      newRecord = model.Find<Transaction>(recordPk);
+      int deleted = model.Delete(newRecord.TransactionId);
+      newRecord = model.Find(recordPk);
+
+      Assert.True(deleted > 0 && newRecord == null);
+    }
+
+
+    [Fact(DisplayName = "Deletes an Anonymously-typed record")]
+    public void _Deletes_Anonymous_Record()
+    {
+      this.CheckSetUp();
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new
+      {
+        Amount = 100,
+        Comment = "I Anonymously Overspent!",
+        Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
+      };
+      var result = model.Insert(newRecord);
+      int recordPk = result.TransactionId;
+
+      // Retrieve the updated item from the Db:
+      var recordToDelete = model.Find(recordPk);
+      int deleted = model.Delete(recordToDelete.TransactionId);
+      recordToDelete = model.Find(recordPk);
+
+      Assert.True(deleted > 0 && recordToDelete == null);
+    }
+
+
+    [Fact(DisplayName = "Selects a single Strongly-typed record")]
+    public void _Selects_Single_Typed_Record_By_Pk()
+    {
+      this.CheckSetUp();
+      int qty = 100;
+      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      int inserted = model.BulkInsert(newTransactions);
+
+      int findRecordPk = 50;
+      var newRecord = model.Find<Transaction>(findRecordPk);
+      Assert.True(newRecord != null);
+    }
+
+
+    [Fact(DisplayName = "Selects a single Anonymously-typed record")]
+    public void _Selects_Singles_Anonymous_Record_By_PK()
+    {
+      this.CheckSetUp();
+      int qty = 100;
+      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      int inserted = model.BulkInsert(newTransactions);
+
+      int findRecordPk = 50;
+      var newRecord = model.Find(findRecordPk);
+      Assert.True(newRecord != null);
+    }
+
+
+    // UTILITY METHODS:
+    void DropTransctionTable()
+    {
+      string sql = ""
+      + "DROP TABLE Transactions ";
+      var Model = new DynamicModel(_connectionStringName);
+      Model.Execute(sql);
+    }
+
+
+    void CreateTransctionTable()
+    {
+      string sql = ""
+      + "CREATE TABLE Transactions "
+      + "(TransactionId int IDENTITY(1,1) PRIMARY KEY NOT NULL, "
+      + "Amount Money NOT NULL, "
+      + "Comment Text NOT NULL, "
+      + "Identifier Text NOT NULL)";
+
+      var Model = new DynamicModel(_connectionStringName);
+      Model.Execute(sql);
+    }
+
+
+    bool TransactionTableExists()
+    {
+      bool exists = false;
+      string sql = ""
+          + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
+          + "WHERE TABLE_SCHEMA = 'dbo' "
+          + "AND  TABLE_NAME = 'Transactions'";
+      var Model = new DynamicModel(_connectionStringName);
+      var query = Model.Query(sql);
+      if (query.Count() > 0)
+      {
+        exists = true;
+      }
+      return exists;
+    }
+
+    List<Transaction> getSkinnyTransactionSet(int qty)
+    {
+      Console.WriteLine(Environment.NewLine);
+      Console.WriteLine("LOAD SKINNY TRANSACTION SET");
+      var transactions = new List<Transaction>();
+      for (int i = 1; i <= qty; i++)
+      {
+        var newTrans = new Transaction()
+        {
+          Amount = i,
+          Comment = "Transaction no. " + i.ToString(),
+          Identifier = "AA-" + i.ToString()
+        };
+        transactions.Add(newTrans);
+      }
+      return transactions;
+    }
+
+
+  }
+}
