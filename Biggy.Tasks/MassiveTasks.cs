@@ -140,6 +140,8 @@ namespace Biggy.Tasks
             sw.Stop();
             this.LogOutput("Wrote", qtyRecords, sw.ElapsedMilliseconds);
 
+            transactions = this.ReadTransactionTable();
+
             sw.Reset();
             sw.Start();
 
