@@ -164,24 +164,6 @@ namespace Biggy.Tasks
             }
             sw.Stop();
             this.LogOutput("Wrote queried values out to console", query.Count(), sw.ElapsedMilliseconds);
-
-            sw.Reset();
-            sw.Start();
-
-            // Update the queried records:
-            foreach(var trans in query)
-            {
-                trans.Amount = trans.Amount * 2;
-                transactions.Update(trans);
-            }
-            sw.Stop();
-            this.LogOutput("Updated", query.Count(), sw.ElapsedMilliseconds);
-
-            // Read the queried records to the console:
-            foreach (var trans in query)
-            {
-                this.LogOutput("New amount = " + trans.Amount);
-            }
         }
 
 
