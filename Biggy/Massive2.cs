@@ -505,11 +505,13 @@ namespace Massive
           else throw new InvalidOperationException("Can't parse this object to the database - there are no properties set");
           return result;
       }
-      public virtual List<DbCommand> CreateInsertBatchCommands(List<object> newRecords)
+      public virtual List<DbCommand> CreateInsertBatchCommands<T>(List<T> newRecords)
       {
           // The magic SQL Server Parameter Limit:
           var MAGIC_PARAMETER_LIMIT = 2100;
+          var MAGIC_ROW_VALUE_LIMIT = 1000;
           int paramCounter = 0;
+          int rowValueCounter = 0;
           var commands = new List<DbCommand>();
 
           // We need a sample to grab the object schema:
@@ -537,13 +539,14 @@ namespace Massive
           foreach (var item in newRecords)
           {
               // Things explode if you exceed the param limit for SQL Server:
-              if (paramCounter + schema.Count >= MAGIC_PARAMETER_LIMIT)
+              if (paramCounter + schema.Count >= MAGIC_PARAMETER_LIMIT || rowValueCounter >= MAGIC_ROW_VALUE_LIMIT)
               {
                   // Add the current command to the list, then start over with another:
                   dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
                   commands.Add(dbCommand);
                   sbSql = new StringBuilder(sqlStub);
                   paramCounter = 0;
+                  rowValueCounter = 0;
                   dbCommand = CreateCommand("", null);
               }
 
@@ -565,6 +568,7 @@ namespace Massive
               }
               // Make a whole record to insert:
               sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
+              rowValueCounter++;
           }
           dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
           commands.Add(dbCommand);
