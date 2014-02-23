@@ -660,6 +660,22 @@ namespace Biggy.Massive
       return result;
     }
 
+
+    public virtual int Update<T>(T o)
+    {
+      var ex = o.ToExpando();
+      var d = (IDictionary<string, object>)ex;
+      if (HasPrimaryKey(o))
+      {
+        var pkValue = d[this.PrimaryKeyField];
+        return this.Update(o, pkValue);
+      }
+      else
+      {
+        throw new InvalidOperationException("No Pirmary Key Specified - Can't parse unique record to update");
+      }
+    }
+
     /// <summary>
     /// Removes one or more records from the DB according to the passed-in WHERE
     /// </summary>
