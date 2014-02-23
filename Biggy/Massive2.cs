@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Text.RegularExpressions;
 
-namespace Massive
+namespace Biggy.Massive
 {
   public static class ObjectExtensions
   {
@@ -590,8 +590,23 @@ namespace Massive
           var cmd = CreateInsertCommand(ex);
           cmd.Connection = conn;
           cmd.ExecuteNonQuery();
-          cmd.CommandText = "SELECT SCOPE_IDENTITY() as newID";
-          ex.ID = cmd.ExecuteScalar();
+          if (PkIsIdentityColumn)
+          {
+            cmd.CommandText = "SELECT @@IDENTITY as newID";
+            // Work with expando as dictionary:
+            var d = ex as IDictionary<string, object>;
+            // Set the new identity/PK:
+            d[PrimaryKeyField] = (int)cmd.ExecuteScalar();
+
+            // If a non-anonymous type was passed, see if we can just assign
+            // the new ID to the reference originally passed in:
+            var props = o.GetType().GetProperties();
+            if(props.Any(p => p.Name == PrimaryKeyField))
+            {
+              var idField = props.First(p => p.Name == PrimaryKeyField);
+              idField.SetValue(o, d[PrimaryKeyField]);
+            }
+          }
           Inserted(ex);
         }
         return ex;
