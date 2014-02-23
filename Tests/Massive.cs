@@ -20,28 +20,11 @@ namespace Tests
   [Trait("Massive", "")]
   public class Massive
   {
-    static string _connectionStringName = "northwind";
-    static string _testTableName = "Transactions";
-    static string _tablePkColumn = "TransactionId";
+    MassiveSetup _setup = new MassiveSetup();
+    static string _connectionStringName = MassiveSetup.CONNECTION_STRING_NAME;
+    static string _testTableName = MassiveSetup.TEST_TABLE_NAME;
+    static string _tablePkColumn = MassiveSetup.TABLE_PK_COLUMN;
     DynamicModel _model = null;
-
-    // So each test can run independently:
-    void CheckSetUp()
-    {
-      bool exists = this.TransactionTableExists();
-      if (!exists)
-      {
-        this.CreateTransctionTable();
-        exists = this.TransactionTableExists();
-      }
-      else
-      {
-        this.DropTransctionTable();
-        this.CreateTransctionTable();
-        exists = this.TransactionTableExists();
-      }
-    }
-
 
     [Fact(DisplayName = "Connects to the Sample Db from App_Config")]
     public void _Connects_To_Sample_Db()
@@ -56,25 +39,15 @@ namespace Tests
     [Fact(DisplayName = "Test Table Exists")]
     public void _Test_Table_Exists()
     {
-      bool exists = this.TransactionTableExists();
-      if(!exists)
-      {
-        this.CreateTransctionTable();
-        exists = this.TransactionTableExists();
-      }
-      else
-      {
-        this.DropTransctionTable();
-        this.CreateTransctionTable();
-        exists = this.TransactionTableExists();
-      }
+      _setup.CheckSetUp();
+      bool exists = _setup.TransactionTableExists();
       Assert.True(exists);
     }
 
     [Fact(DisplayName = "Inserts a Single Strongly-Typed Record")]
     public void _Inserts_Single_Typed_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       var newRecord = new Transaction()
       {
         Amount = 100,
@@ -90,7 +63,7 @@ namespace Tests
     [Fact(DisplayName = "Inserts a Single Anonymous Record")]
     public void _Inserts_Single_Anonymous_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       dynamic newRecord = new
       {
         Amount = 100,
@@ -106,9 +79,9 @@ namespace Tests
     [Fact(DisplayName = "Inserts 12 metric crap-loads of new records")]
     public void _Inserts_Bulk_Records()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       int qty = 10000;
-      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var newTransactions = _setup.getSkinnyTransactionSet(qty);
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
       Assert.True(inserted == qty);
@@ -117,7 +90,7 @@ namespace Tests
     [Fact(DisplayName = "Updates a Strongly-typed record")]
     public void _Updates_Typed_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
@@ -143,7 +116,7 @@ namespace Tests
     [Fact(DisplayName = "Updates an Anonymously-typed record")]
     public void _Updates_Anonymous_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new
       {
@@ -170,7 +143,7 @@ namespace Tests
     [Fact(DisplayName = "Deletes a Strongly-typed record")]
     public void _Deletes_Typed_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
@@ -192,7 +165,7 @@ namespace Tests
     [Fact(DisplayName = "Deletes an Anonymously-typed record")]
     public void _Deletes_Anonymous_Record()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new
       {
@@ -215,9 +188,9 @@ namespace Tests
     [Fact(DisplayName = "Selects a single Strongly-typed record")]
     public void _Selects_Single_Typed_Record_By_Pk()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       int qty = 100;
-      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var newTransactions = _setup.getSkinnyTransactionSet(qty);
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
@@ -230,9 +203,9 @@ namespace Tests
     [Fact(DisplayName = "Selects a single Anonymously-typed record")]
     public void _Selects_Singles_Anonymous_Record_By_PK()
     {
-      this.CheckSetUp();
+      _setup.CheckSetUp();
       int qty = 100;
-      var newTransactions = this.getSkinnyTransactionSet(qty);
+      var newTransactions = _setup.getSkinnyTransactionSet(qty);
       var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
@@ -242,64 +215,62 @@ namespace Tests
     }
 
 
-    // UTILITY METHODS:
-    void DropTransctionTable()
-    {
-      string sql = ""
-      + "DROP TABLE Transactions ";
-      var Model = new DynamicModel(_connectionStringName);
-      Model.Execute(sql);
-    }
+    //// UTILITY METHODS:
+    //void DropTransctionTable()
+    //{
+    //  string sql = ""
+    //  + "DROP TABLE Transactions ";
+    //  var Model = new DynamicModel(_connectionStringName);
+    //  Model.Execute(sql);
+    //}
 
 
-    void CreateTransctionTable()
-    {
-      string sql = ""
-      + "CREATE TABLE Transactions "
-      + "(TransactionId int IDENTITY(1,1) PRIMARY KEY NOT NULL, "
-      + "Amount Money NOT NULL, "
-      + "Comment Text NOT NULL, "
-      + "Identifier Text NOT NULL)";
+    //void CreateTransctionTable()
+    //{
+    //  string sql = ""
+    //  + "CREATE TABLE Transactions "
+    //  + "(TransactionId int IDENTITY(1,1) PRIMARY KEY NOT NULL, "
+    //  + "Amount Money NOT NULL, "
+    //  + "Comment Text NOT NULL, "
+    //  + "Identifier Text NOT NULL)";
 
-      var Model = new DynamicModel(_connectionStringName);
-      Model.Execute(sql);
-    }
-
-
-    bool TransactionTableExists()
-    {
-      bool exists = false;
-      string sql = ""
-          + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
-          + "WHERE TABLE_SCHEMA = 'dbo' "
-          + "AND  TABLE_NAME = 'Transactions'";
-      var Model = new DynamicModel(_connectionStringName);
-      var query = Model.Query(sql);
-      if (query.Count() > 0)
-      {
-        exists = true;
-      }
-      return exists;
-    }
-
-    List<Transaction> getSkinnyTransactionSet(int qty)
-    {
-      Console.WriteLine(Environment.NewLine);
-      Console.WriteLine("LOAD SKINNY TRANSACTION SET");
-      var transactions = new List<Transaction>();
-      for (int i = 1; i <= qty; i++)
-      {
-        var newTrans = new Transaction()
-        {
-          Amount = i,
-          Comment = "Transaction no. " + i.ToString(),
-          Identifier = "AA-" + i.ToString()
-        };
-        transactions.Add(newTrans);
-      }
-      return transactions;
-    }
+    //  var Model = new DynamicModel(_connectionStringName);
+    //  Model.Execute(sql);
+    //}
 
 
+    //bool TransactionTableExists()
+    //{
+    //  bool exists = false;
+    //  string sql = ""
+    //      + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
+    //      + "WHERE TABLE_SCHEMA = 'dbo' "
+    //      + "AND  TABLE_NAME = 'Transactions'";
+    //  var Model = new DynamicModel(_connectionStringName);
+    //  var query = Model.Query(sql);
+    //  if (query.Count() > 0)
+    //  {
+    //    exists = true;
+    //  }
+    //  return exists;
+    //}
+
+    //List<Transaction> getSkinnyTransactionSet(int qty)
+    //{
+    //  Console.WriteLine(Environment.NewLine);
+    //  Console.WriteLine("LOAD SKINNY TRANSACTION SET");
+    //  var transactions = new List<Transaction>();
+    //  for (int i = 1; i <= qty; i++)
+    //  {
+    //    var newTrans = new Transaction()
+    //    {
+    //      Amount = i,
+    //      Comment = "Transaction no. " + i.ToString(),
+    //      Identifier = "AA-" + i.ToString()
+    //    };
+    //    transactions.Add(newTrans);
+    //  }
+    //  return transactions;
+    //}
   }
 }
