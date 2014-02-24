@@ -8,6 +8,7 @@ using Biggy.Extensions;
 using System.Diagnostics;
 using Biggy.SQLServer;
 using Biggy.JSON;
+using System.IO;
 
 namespace Biggy.Tasks {
 
@@ -49,12 +50,9 @@ namespace Biggy.Tasks {
 
   class Program {
     static void Main(string[] args) {
-      //WhatWhat();
-        //var massiveTasks = new MassiveTasks();
-        //massiveTasks.RunBenchmarks();
 
-      TalkToPG();
-        Console.Read();
+      RunBenchmarks();
+      Console.Read();
 
     }
     static void TalkToPG() {
@@ -95,54 +93,22 @@ namespace Biggy.Tasks {
 
     static void RunBenchmarks() {
       Console.WriteLine("Writing 1000 records sync");
-      var sw = new Stopwatch();
       var products = new BiggyList<Product>();
-
+      products.Clear();
+      //File.Delete(products.DbPath);
+      //products.Reload();
       //1000 writes?
+      var sw = new Stopwatch();
+      sw.Start();
+
       for (int i = 0; i < 1000; i++) {
         var p = new Product { Sku = "SKU" + i, Name = "Steve", Price = 12.00M };
         products.Add(p);
       }
-      sw.Start();
-      products.Save();
       sw.Stop();
 
       Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
       sw.Reset();
-
-      Console.WriteLine("Resetting...");
-      products.Purge();
-
-      Console.WriteLine("Writing 1000 records async");
-
-      //1000 writes?
-      for (int i = 0; i < 1000; i++) {
-        var p = new Product { Sku = "SKUDDY" + i, Name = "Steve", Price = 12.00M };
-        products.Add(p);
-      }
-      sw.Start();
-      products.SaveAsync();
-      sw.Stop();
-
-      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
-      sw.Reset();
-
-
-      //1000 writes?
-      Console.WriteLine("Writing 1000 records with write happening in a loop");
-
-      sw.Start();
-      for (int i = 0; i < 1000; i++) {
-        var p = new Product { Sku = "SKU" + i, Name = "Steve", Price = 12.00M };
-        products.Add(p);
-        //bad idea... run it and see why
-        products.Save();
-      }
-      sw.Stop();
-
-      Console.WriteLine("{0}ms", sw.ElapsedMilliseconds);
-      sw.Reset();
-
 
       Console.WriteLine("Reading from records");
       sw.Start();

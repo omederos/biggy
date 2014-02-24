@@ -9,12 +9,19 @@ using Newtonsoft.Json;
 namespace Biggy.JSON
 {
 
-    public class BiggyList<T> : FastList<T> {
+    public class BiggyList<T> :ICollection<T> where T: new() {
 
+      List<T> _items = null;
       public string DbDirectory { get; set; }
       public bool InMemory { get; set; }
       public string DbFileName { get; set; }
       public string DbName { get; set; }
+
+      public event EventHandler ItemRemoved;
+      public event EventHandler ItemAdded;
+      public event EventHandler Saved;
+      public event EventHandler Changed;
+      public event EventHandler Loaded;
 
       public string DbPath {
         get {
@@ -28,7 +35,6 @@ namespace Biggy.JSON
         }
       }
 
-
       public BiggyList(string dbPath = "current", bool inMemory = false, string dbName = "") {
 
         this.InMemory = inMemory;
@@ -41,9 +47,10 @@ namespace Biggy.JSON
         }
         this.DbFileName = this.DbName + ".json";
         this.SetDataDirectory(dbPath);
-        _items = TryLoadList();
-
+        _items = TryLoadFileData(this.DbPath);
       }
+
+
 
       public void SetDataDirectory(string dbPath) {
         var dataDir = dbPath;
@@ -61,59 +68,140 @@ namespace Biggy.JSON
 
       }
 
-      public override void Purge() {
-        this.Clear();
-        this.Save();
-      }
 
-      public override List<T> TryLoadList() {
+      public List<T> TryLoadFileData(string path) {
+
         List<T> result = new List<T>();
-        if (File.Exists(this.DbPath)) {
-          var json = File.ReadAllText(this.DbPath);
+        if (File.Exists(path)) {
+          //format for the deserializer...
+          var json = "[" + File.ReadAllText(path).Replace(Environment.NewLine,",")+ "]";
           result = JsonConvert.DeserializeObject<List<T>>(json);
         }
 
-        //call the base for eventing
-        base.TryLoadList();
+        if (this.Loaded != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Items = result;
+          this.Loaded.Invoke(this, args);
+        }
 
-        return result;      
+        return result;
       }
 
-      public override async Task SaveAsync() {
-        if (!this.InMemory) {
-          var json = JsonConvert.SerializeObject(this);
-          var buff = Encoding.Default.GetBytes(json);
-          using (var fs = File.OpenWrite(this.DbPath)) {
-            await fs.WriteAsync(buff, 0, buff.Length);
-          }
+      public void Reload() {
+        _items = TryLoadFileData(this.DbPath);
+      }
+
+      public void Update(T item) {
+        var index = _items.IndexOf(item);
+        if (index > -1) {
+          _items.RemoveAt(index);
+          _items.Insert(index, item);
+          this.FlushToDisk();
+        } else {
+          Add(item);
+        }
+
+      }
+
+      public void Add(T item) {
+
+        _items.Add(item);
+        var json = JsonConvert.SerializeObject(item);
+        //append the to the file
+        using (var writer = File.AppendText(this.DbPath)) {
+          writer.WriteLine(json);
+        }
+        this.FireInsertedEvents(item);
+        this.FireChangedEvents();
+      }
+
+      public void Clear() {
+        _items.Clear();
+        this.FlushToDisk();
+        this.FireChangedEvents();
+      }
+
+      public bool Contains(T item) {
+        return _items.Contains(item);
+      }
+
+      public void CopyTo(T[] array, int arrayIndex) {
+        _items.CopyTo(array, arrayIndex);
+      }
+
+      public int Count {
+        get { return _items.Count; }
+      }
+
+      public bool IsReadOnly {
+        get { return false; }
+      }
+
+      public bool Remove(T item) {
+        return _items.Remove(item);
+        this.FlushToDisk();
+        this.FireRemovedEvents(item);
+        this.FireChangedEvents();
+      }
+
+      public IEnumerator<T> GetEnumerator() {
+        return _items.GetEnumerator();
+      }
+
+      System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() {
+        return _items.GetEnumerator();
+      }
+
+
+      public bool FlushToDisk() {
+        var json = JsonConvert.SerializeObject(this);
+        var cleaned = json.Replace("[", "").Replace("]", "").Replace(",", Environment.NewLine);
+        var buff = Encoding.Default.GetBytes(json);
+        using (var fs = File.OpenWrite(this.DbPath)) {
+          fs.WriteAsync(buff, 0, buff.Length);
+        }
+        return true;
+      }
+
+
+      protected void FireChangedEvents() {
+        if (this.Changed != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Items = _items;
+          this.ItemRemoved.Invoke(this, args);
         }
       }
 
-      public override bool Save() {
-        try {
-          if (!String.IsNullOrWhiteSpace(this.DbDirectory) && !this.InMemory) {
-            //write it to disk
-            var serializer = new JsonSerializer();
-            using (var fs = File.CreateText(this.DbPath)) {
-              serializer.Serialize(fs, this);
-            }
-          }
-          this.FireSavedEvents();
-          return true;
-
-        } catch (Exception x) {
-          //log it?
-          throw;
+      protected void FireRemovedEvents(T item) {
+        if (this.ItemRemoved != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Item = item;
+          this.ItemRemoved.Invoke(this, args);
         }
       }
 
-      public override bool SaveBulk(params T[] items) {
-        throw new NotImplementedException();
+      protected void FireInsertedEvents(T item) {
+        if (this.ItemAdded != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Item = item;
+          this.ItemAdded.Invoke(this, args);
+        }
       }
 
-      public override Task SaveBulkAsync(params T[] items) {
-        _items.AddRange(items);
-        return this.SaveAsync();
+      protected void FireLoadedEvents() {
+        if (this.Loaded != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Items = _items;
+          this.Loaded.Invoke(this, args);
+        }
+      }
+
+      protected void FireSavedEvents() {
+        if (this.Saved != null) {
+          var args = new BiggyEventArgs<T>();
+          args.Items = _items;
+          this.Saved.Invoke(this, args);
+        }
       }
 
 

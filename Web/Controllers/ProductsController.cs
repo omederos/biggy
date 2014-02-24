@@ -39,7 +39,7 @@ namespace Web.Controllers
         {
             // TODO: Add insert logic here
             DB.Products.Add(product);
-            DB.Products.Save();
+            //DB.Products.Save();
             return RedirectToAction("Index");
 
         }
@@ -60,7 +60,7 @@ namespace Web.Controllers
             // TODO: Add update logic here
             var product = DB.Products.FirstOrDefault(x => x.Sku == id);
             DB.Products.Update(p);
-            DB.Products.Save();
+            //DB.Products.Save();
             return RedirectToAction("Index");
 
         }
@@ -83,7 +83,7 @@ namespace Web.Controllers
                 // TODO: Add delete logic here
                 var product = DB.Products.FirstOrDefault(x => x.Sku == id);
                 DB.Products.Remove(product);
-                DB.Products.Save();
+                //DB.Products.Save();
                 return RedirectToAction("Index");
             }
             catch

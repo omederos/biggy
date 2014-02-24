@@ -54,7 +54,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BiggyEventArgs.cs" />
-    <Compile Include="FastList.cs" />
     <Compile Include="JSON\BiggyList.cs" />
     <Compile Include="JSON\BiggyDB.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />

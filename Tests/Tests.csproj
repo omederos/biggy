@@ -42,13 +42,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="JSON\Dynamics.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="SQLServer\Massive.cs" />
     <Compile Include="SQLServer\MassiveList.cs" />
     <Compile Include="SQLServer\MassiveSetup.cs" />
-    <Compile Include="JSON\Reads.cs" />
-    <Compile Include="JSON\Writes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -66,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="DbScripts\" />
+    <Folder Include="JSON\" />
     <Folder Include="Postgres\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
