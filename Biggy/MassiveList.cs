@@ -14,7 +14,7 @@ namespace Biggy {
     public bool InMemory { get; set; }
     public string TableName { get; set; }
     public string ConnectionString { get; set; }
-    public DynamicModel Model { get; set; }
+    public DBTable Model { get; set; }
 
     public event EventHandler ItemRemoved;
     public event EventHandler ItemAdded;
@@ -30,7 +30,7 @@ namespace Biggy {
         var thingyType = this.GetType().GenericTypeArguments[0].Name;
         this.TableName = Inflector.Inflector.Pluralize(thingyType).ToLower();
       }
-      this.Model = new DynamicModel(connectionStringName, this.TableName, primaryKeyName);
+      this.Model = new DBTable(connectionStringName, this.TableName, primaryKeyName);
       this.Reload();
 
       if (this.Loaded != null) {

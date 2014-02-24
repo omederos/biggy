@@ -37,7 +37,7 @@ namespace Tests
     {
       string sql = ""
       + "DROP TABLE Transactions ";
-      var Model = new DynamicModel(CONNECTION_STRING_NAME);
+      var Model = new DBTable(CONNECTION_STRING_NAME);
       Model.Execute(sql);
     }
 
@@ -51,7 +51,7 @@ namespace Tests
       + "Comment Text NOT NULL, "
       + "Identifier Text NOT NULL)";
 
-      var Model = new DynamicModel(CONNECTION_STRING_NAME);
+      var Model = new DBTable(CONNECTION_STRING_NAME);
       Model.Execute(sql);
     }
 
@@ -63,7 +63,7 @@ namespace Tests
           + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
           + "WHERE TABLE_SCHEMA = 'dbo' "
           + "AND  TABLE_NAME = 'Transactions'";
-      var Model = new DynamicModel(CONNECTION_STRING_NAME);
+      var Model = new DBTable(CONNECTION_STRING_NAME);
       var query = Model.Query(sql);
       if (query.Count() > 0)
       {

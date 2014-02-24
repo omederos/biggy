@@ -10,162 +10,30 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Text.RegularExpressions;
+using Biggy.Extensions;
 
 namespace Biggy.Massive
 {
-  public static class ObjectExtensions
-  {
-    public static void CloneFromObject(this object o, object record) {
-      var props = o.GetType().GetProperties();
-      var dictionary = record.ToDictionary();
-      foreach (var prop in props) {
-        var propName = prop.Name;
-        foreach (var key in dictionary.Keys) {
-          if(key.Equals(propName,StringComparison.InvariantCultureIgnoreCase)){
-            prop.SetValue(o,dictionary[key]);
-          }
-        }
-      }
-    }
-
-    /// <summary>
-    /// Extension method for adding in a bunch of parameters
-    /// </summary>
-    public static void AddParams(this DbCommand cmd, params object[] args) {
-      foreach (var item in args) {
-        AddParam(cmd, item);
-      }
-    }
-
-    /// <summary>
-    /// Extension for adding single parameter
-    /// </summary>
-    public static void AddParam(this DbCommand cmd, object item) {
-      var p = cmd.CreateParameter();
-      p.ParameterName = string.Format("@{0}", cmd.Parameters.Count);
-      if (item == null) {
-        p.Value = DBNull.Value;
-      }
-      else {
-        if (item.GetType() == typeof(Guid)) {
-          p.Value = item.ToString();
-          p.DbType = DbType.String;
-          p.Size = 4000;
-        }
-        else if (item.GetType() == typeof(ExpandoObject)) {
-          var d = (IDictionary<string, object>)item;
-          p.Value = d.Values.FirstOrDefault();
-        } else {
-          p.Value = item;
-        }
-        if (item.GetType() == typeof(string)) {
-          p.Size = ((string)item).Length > 4000 ? -1 : 4000;
-        }
-      }
-      cmd.Parameters.Add(p);
-    }
-
-    /// <summary>
-    /// Turns an IDataReader to a Dynamic list of things
-    /// </summary>
-    public static List<dynamic> ToExpandoList(this IDataReader rdr) {
-      var result = new List<dynamic>();
-      while (rdr.Read()) {
-        result.Add(rdr.RecordToExpando());
-      }
-      return result;
-    }
-
-    public static dynamic RecordToExpando(this IDataReader rdr) {
-      dynamic e = new ExpandoObject();
-      var d = e as IDictionary<string, object>;
-      for (int i = 0; i < rdr.FieldCount; i++) {
-        d.Add(rdr.GetName(i), DBNull.Value.Equals(rdr[i]) ? null : rdr[i]);
-      }
-      return e;
-    }
-
-    public static List<T> ToList<T>(this IDataReader rdr) where T : new() {
-      var result = new List<T>();
-      while (rdr.Read()) {
-        result.Add(rdr.ToSingle<T>());
-      }
-      return result;
-    }
-
-    public static T ToSingle<T>(this IDataReader rdr) where T : new() {
-      var item = new T();
-      var props = item.GetType().GetProperties();
-      foreach (var prop in props) {
-        for (int i = 0; i < rdr.FieldCount; i++) {
-          if (rdr.GetName(i).Equals(prop.Name, StringComparison.InvariantCultureIgnoreCase)) {
-            var val = rdr.GetValue(i);
-            prop.SetValue(item, val);
-          }
-        }
-      }
-      return item;
-    }
-
-    /// <summary>
-    /// Turns the object into an ExpandoObject
-    /// </summary>
-    public static dynamic ToExpando(this object o) {
-      var result = new ExpandoObject();
-      var d = result as IDictionary<string, object>; //work with the Expando as a Dictionary
-      if (o.GetType() == typeof(ExpandoObject)) return o; //shouldn't have to... but just in case
-      if (o.GetType() == typeof(NameValueCollection) || o.GetType().IsSubclassOf(typeof(NameValueCollection))) {
-        var nv = (NameValueCollection)o;
-        nv.Cast<string>().Select(key => new KeyValuePair<string, object>(key, nv[key])).ToList().ForEach(i => d.Add(i));
-      } else {
-        var props = o.GetType().GetProperties();
-        foreach (var item in props) {
-          d.Add(item.Name, item.GetValue(o, null));
-        }
-      }
-      return result;
-    }
-
-    /// <summary>
-    /// Turns the object into a Dictionary
-    /// </summary>
-    public static IDictionary<string, object> ToDictionary(this object thingy) {
-      return (IDictionary<string, object>)thingy.ToExpando();
-    }
-  }
-
-
-  /// <summary>
-  /// Convenience class for opening/executing data
-  /// </summary>
-  public static class DB {
-    public static DynamicModel Connect(string connectionName, string tableName, string primaryKeyField = "id") {
-      return new DynamicModel(ConfigurationManager.ConnectionStrings[connectionName].ConnectionString,tableName, primaryKeyField);
-    }
-  }
-
 
   /// <summary>
   /// A class that wraps your database table in Dynamic Funtime
   /// </summary>
-  public class DynamicModel : DynamicObject {
-    DbProviderFactory _factory;
-    string ConnectionString;
-    public static DynamicModel Open(string connectionStringName) {
-      dynamic dm = new DynamicModel(connectionStringName);
+  public class DBTable : DynamicObject {
+    
+    protected string ConnectionString;
+
+    public static DBTable Open(string connectionStringName) {
+      dynamic dm = new DBTable(connectionStringName);
       return dm;
     }
 
-    public DynamicModel(string connectionStringName, string tableName = "",
+    public DBTable(string connectionStringName, string tableName = "",
       string primaryKeyField = "", string descriptorField = "", bool pkIsIdentityColumn = true)
     {
       TableName = tableName == "" ? this.GetType().Name : tableName;
       PrimaryKeyField = string.IsNullOrEmpty(primaryKeyField) ? "ID" : primaryKeyField;
       DescriptorField = descriptorField;
       PkIsIdentityColumn = pkIsIdentityColumn;
-      var _providerName = "System.Data.SqlClient";
-
-      _factory = DbProviderFactories.GetFactory(_providerName);
       ConnectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
     }
 
@@ -194,25 +62,7 @@ namespace Biggy.Massive
     public virtual string TableName { get; set; }
     public string DescriptorField { get; protected set; }
 
-    /// <summary>
-    /// Gets a default value for the column
-    /// </summary>
-    public dynamic DefaultValue(dynamic column) {
-      dynamic result = null;
-      string def = column.COLUMN_DEFAULT;
-      if (String.IsNullOrEmpty(def)) {
-        result = null;
-      } 
-      else if (def == "getdate()" || def == "(getdate())") {
-        result = DateTime.Now.ToShortDateString();
-      }
-      else if (def == "newid()") {
-        result = Guid.NewGuid().ToString();
-      } else {
-        result = def.Replace("(", "").Replace(")", "");
-      }
-      return result;
-    }
+
 
     /// <summary>
     /// Enumerates the reader yielding the result - thanks to Jeroen Haegebaert
@@ -268,8 +118,8 @@ namespace Biggy.Massive
     /// <summary>
     /// Creates a DBCommand that you can use for loving your database.
     /// </summary>
-    DbCommand CreateCommand(string sql, DbConnection conn, params object[] args) {
-      var result = _factory.CreateCommand();
+    public virtual DbCommand CreateCommand(string sql, DbConnection conn, params object[] args) {
+      var result = conn.CreateCommand();
       result.Connection = conn;
       result.CommandText = sql;
       if (args.Length > 0) {
@@ -282,8 +132,8 @@ namespace Biggy.Massive
     /// Returns and OpenConnection
     /// </summary>
     public virtual DbConnection OpenConnection() {
-      var result = _factory.CreateConnection();
-      result.ConnectionString = ConnectionString;
+      //hard-code this, the overrides for PG etc will reset this.
+      var result = new SqlConnection(this.ConnectionString);
       result.Open();
       return result;
     }
@@ -345,7 +195,7 @@ namespace Biggy.Massive
       return Query<T>(string.Format(sql, columns, TableName), args);
     }
 
-    private static string BuildSelect(string where, string orderBy, int limit) {
+    protected virtual string BuildSelect(string where, string orderBy, int limit) {
       string sql = limit > 0 ? "SELECT TOP " + limit + " {0} FROM {1} " : "SELECT {0} FROM {1} ";
       if (!string.IsNullOrEmpty(where)) {
         sql += where.Trim().StartsWith("where", StringComparison.OrdinalIgnoreCase) ? where : " WHERE " + where;
@@ -388,21 +238,6 @@ namespace Biggy.Massive
     public virtual dynamic Find(object key) {
       var sql = string.Format("SELECT TOP 2 * FROM {0} WHERE {1} = @0", TableName, PrimaryKeyField);
       return Query(sql, key).FirstOrDefault();
-    }
-
-    /// <summary>
-    /// This will return a string/object dictionary for dropdowns etc
-    /// </summary>
-    public virtual IDictionary<string, object> KeyValues(string orderBy = "") {
-      if (String.IsNullOrEmpty(DescriptorField)) {
-        throw new InvalidOperationException("There's no DescriptorField set - do this in your constructor to describe the text value you want to see");
-      }
-      var sql = string.Format("SELECT {0},{1} FROM {2} ", PrimaryKeyField, DescriptorField, TableName);
-      if (!String.IsNullOrEmpty(orderBy)) {
-        sql += "ORDER BY " + orderBy;
-      }
-      var results = Query(sql).ToList().Cast<IDictionary<string, object>>();
-      return results.ToDictionary(key => key[PrimaryKeyField].ToString(), value => value[DescriptorField]);
     }
 
     /// <summary>
@@ -592,7 +427,7 @@ namespace Biggy.Massive
           cmd.ExecuteNonQuery();
           if (PkIsIdentityColumn)
           {
-            cmd.CommandText = "SELECT @@IDENTITY as newID";
+            cmd.CommandText = "SELECT SCOPE_IDENTITY() as newID";
             // Work with expando as dictionary:
             var d = ex as IDictionary<string, object>;
             // Set the new identity/PK:

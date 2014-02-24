@@ -72,7 +72,7 @@ namespace Biggy.Tasks
         {
             string sql = ""
             + "DROP TABLE Transactions ";
-            var Model = new DynamicModel(_connectionString);
+            var Model = new DBTable(_connectionString);
             Model.Execute(sql);
         }
 
@@ -86,7 +86,7 @@ namespace Biggy.Tasks
             + "Comment Text NOT NULL, "
             + "Identifier Text NOT NULL)";
 
-            var Model = new DynamicModel(_connectionString);
+            var Model = new DBTable(_connectionString);
             Model.Execute(sql);
         }
 
@@ -98,7 +98,7 @@ namespace Biggy.Tasks
                 + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
                 + "WHERE TABLE_SCHEMA = 'dbo' "
                 + "AND  TABLE_NAME = 'Transactions'";
-            var Model = new DynamicModel(_connectionString);
+            var Model = new DBTable(_connectionString);
             var query = Model.Query(sql);
             if(query.Count() > 0)
             {

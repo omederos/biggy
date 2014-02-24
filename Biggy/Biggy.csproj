@@ -33,8 +33,14 @@
     <Reference Include="Inflector">
       <HintPath>..\packages\Inflector.1.0.0.0\lib\net45\Inflector.dll</HintPath>
     </Reference>
+    <Reference Include="Mono.Security">
+      <HintPath>..\packages\Npgsql.2.0.14.3\lib\net45\Mono.Security.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Npgsql">
+      <HintPath>..\packages\Npgsql.2.0.14.3\lib\net45\Npgsql.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -51,7 +57,9 @@
     <Compile Include="BiggyList.cs" />
     <Compile Include="BiggyDB.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />
-    <Compile Include="Massive2.cs" />
+    <Compile Include="Extensions\ObjectExtensions.cs" />
+    <Compile Include="Massive.cs" />
+    <Compile Include="MassivePG.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MassiveList.cs" />
   </ItemGroup>

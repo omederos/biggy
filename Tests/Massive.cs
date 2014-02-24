@@ -24,12 +24,12 @@ namespace Tests
     static string _connectionStringName = MassiveSetup.CONNECTION_STRING_NAME;
     static string _testTableName = MassiveSetup.TEST_TABLE_NAME;
     static string _tablePkColumn = MassiveSetup.TABLE_PK_COLUMN;
-    DynamicModel _model = null;
+    DBTable _model = null;
 
     [Fact(DisplayName = "Connects to the Sample Db from App_Config")]
     public void _Connects_To_Sample_Db()
     {
-      _model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      _model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var cn = _model.OpenConnection();
       Assert.True(cn != null && cn.State == System.Data.ConnectionState.Open);
       cn.Close();
@@ -54,7 +54,7 @@ namespace Tests
         Comment = "I Overspent!",
         Identifier = "XXX"
       };
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var inserted = model.Insert(newRecord);
       Assert.True(newRecord.TransactionId > 0);     
     }
@@ -70,7 +70,7 @@ namespace Tests
         Comment = "I Anonymously Overspent!",
         Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
       };
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var inserted = model.Insert(newRecord);
       Assert.True(inserted.TransactionId > 0);
     }
@@ -82,7 +82,7 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 10000;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
       Assert.True(inserted == qty);
     }
@@ -91,7 +91,7 @@ namespace Tests
     public void _Updates_Typed_Record()
     {
       _setup.CheckSetUp();
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
         Amount = 100,
@@ -117,7 +117,7 @@ namespace Tests
     public void _Updates_Anonymous_Record()
     {
       _setup.CheckSetUp();
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new
       {
         Amount = 100,
@@ -144,7 +144,7 @@ namespace Tests
     public void _Deletes_Typed_Record()
     {
       _setup.CheckSetUp();
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
         Amount = 100,
@@ -166,7 +166,7 @@ namespace Tests
     public void _Deletes_Anonymous_Record()
     {
       _setup.CheckSetUp();
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new
       {
         Amount = 100,
@@ -191,7 +191,7 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 100;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
       int findRecordPk = 50;
@@ -206,7 +206,7 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 100;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DynamicModel(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
       int findRecordPk = 50;
