@@ -23,7 +23,6 @@ You can also run this Async if you have a lot of writes:
 ```csharp
 dynamic db = new BiggyDB();
 db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
-db.Clowns.SaveAsync();
 ```
 
 ## It's Not All Dynamic
