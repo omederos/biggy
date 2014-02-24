@@ -10,8 +10,7 @@ Toss LINQ and Dynamics into a bowl, sprinkle with some JSON serialization and yo
 
 ```csharp
 dynamic db = new BiggyDB();
-db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
-db.Clowns.Save();
+db.Clowns.Add(new { Name = "Rob Sullivan", Age = 1002 });
 ```
 This does two things:
 
@@ -22,7 +21,7 @@ You can also run this Async if you have a lot of writes:
 
 ```csharp
 dynamic db = new BiggyDB();
-db.Clowns.Add(new { Name = "Fully Dully", Age = 1002 });
+db.Clowns.Add(new { Name = "Thingy Bob Joe Bill", Age = 1002 });
 ```
 
 ## It's Not All Dynamic
@@ -48,6 +47,11 @@ class Product {
 
 //add and save to this list as above
 var products = new BiggyList<Product>();
+//it's all LINQ since you're querying an in-memory list
+var p = products.FirstOrDefault(x => x.Sku == "THINGY");
+p.Name = "Something Fun";
+//writes asynchronously to the backing store in Data/products.json
+products.Update(p);
 ```
 
 The list infers a few things for you:
