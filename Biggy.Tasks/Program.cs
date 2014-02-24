@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using Biggy.Extensions;
 using System.Diagnostics;
+using Biggy.Massive;
 
 namespace Biggy.Tasks {
 
@@ -48,12 +49,20 @@ namespace Biggy.Tasks {
   class Program {
     static void Main(string[] args) {
       //WhatWhat();
-        var massiveTasks = new MassiveTasks();
-        massiveTasks.RunBenchmarks();
+        //var massiveTasks = new MassiveTasks();
+        //massiveTasks.RunBenchmarks();
+
+      TalkToPG();
         Console.Read();
 
     }
-
+    static void TalkToPG() {
+      var table = new PGTable("northwindPG", "products", "productid");
+      var list = table.All();
+      foreach (var p in list) {
+        Console.WriteLine(p.productid);
+      }
+    }
     //static void WhatWhat() {
 
     //  var sw = new Stopwatch();
