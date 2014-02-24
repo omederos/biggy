@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Biggy.Massive;
+using Biggy.SQLServer;
 using System.Diagnostics;
 
 namespace Biggy.Tasks
@@ -72,7 +72,7 @@ namespace Biggy.Tasks
         {
             string sql = ""
             + "DROP TABLE Transactions ";
-            var Model = new DBTable(_connectionString);
+            var Model = new SQLServerTable<Transaction>(_connectionString);
             Model.Execute(sql);
         }
 
@@ -86,7 +86,7 @@ namespace Biggy.Tasks
             + "Comment Text NOT NULL, "
             + "Identifier Text NOT NULL)";
 
-            var Model = new DBTable(_connectionString);
+            var Model = new SQLServerTable<Transaction>(_connectionString);
             Model.Execute(sql);
         }
 
@@ -98,8 +98,8 @@ namespace Biggy.Tasks
                 + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
                 + "WHERE TABLE_SCHEMA = 'dbo' "
                 + "AND  TABLE_NAME = 'Transactions'";
-            var Model = new DBTable(_connectionString);
-            var query = Model.Query(sql);
+            var Model = new SQLServerTable<Transaction>(_connectionString);
+            var query = Model.Query<Transaction>(sql);
             if(query.Count() > 0)
             {
                 exists = true;
@@ -128,7 +128,7 @@ namespace Biggy.Tasks
             this.CreateTransctionTable();
 
             // Load the empty table:
-            var transactions = new MassiveList<Transaction>(_connectionString, _tableName, _tablePkName);
+            var transactions = new SQLServerList<Transaction>(_connectionString, _tableName, _tablePkName);
             transactions.Clear();
 
             var sw = new Stopwatch();
@@ -176,7 +176,7 @@ namespace Biggy.Tasks
 
             var sw = new Stopwatch();
             sw.Start();
-            var transactions = new MassiveList<Transaction>(_connectionString, _tableName, _tablePkName);
+            var transactions = new SQLServerList<Transaction>(_connectionString, _tableName, _tablePkName);
             int count = transactions.Count;
             sw.Stop();
             this.LogOutput("Read", count, sw.ElapsedMilliseconds);
@@ -189,13 +189,13 @@ namespace Biggy.Tasks
         }
 
 
-        public MassiveList<Transaction> ReadTransactionTable()
+        public SQLServerList<Transaction> ReadTransactionTable()
         {
             Console.WriteLine(Environment.NewLine);
             Console.WriteLine("READ FROM TRANSACTIONS TABLE");
             var sw = new Stopwatch();
             sw.Start();
-            var transactions = new MassiveList<Transaction>(_connectionString, _tableName, _tablePkName);
+            var transactions = new SQLServerList<Transaction>(_connectionString, _tableName, _tablePkName);
             sw.Stop();
             this.LogOutput("Read", transactions.Count, sw.ElapsedMilliseconds);
             return transactions;
@@ -210,7 +210,7 @@ namespace Biggy.Tasks
 
             var sw = new Stopwatch();
             sw.Start();
-            var transactions = new MassiveList<Transaction>(_connectionString, _tableName, _tablePkName);
+            var transactions = new SQLServerList<Transaction>(_connectionString, _tableName, _tablePkName);
             sw.Stop();
             this.LogOutput("Read", transactions.Count, sw.ElapsedMilliseconds);
             sw.Reset();
@@ -228,7 +228,7 @@ namespace Biggy.Tasks
             var sw = new Stopwatch();
             sw.Start();
             int qty = newTransactions.Count;
-            var transactions = new MassiveList<Transaction>(_connectionString, _tableName, _tablePkName);
+            var transactions = new SQLServerList<Transaction>(_connectionString, _tableName, _tablePkName);
             sw.Stop();
             this.LogOutput("Read", transactions.Count, sw.ElapsedMilliseconds);
 

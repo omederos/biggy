@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Biggy.Massive;
+using Biggy.SQLServer;
 
 namespace Tests
 {
@@ -37,7 +37,7 @@ namespace Tests
     {
       string sql = ""
       + "DROP TABLE Transactions ";
-      var Model = new DBTable(CONNECTION_STRING_NAME);
+      var Model = new SQLServerTable<Transaction>(CONNECTION_STRING_NAME);
       Model.Execute(sql);
     }
 
@@ -51,7 +51,7 @@ namespace Tests
       + "Comment Text NOT NULL, "
       + "Identifier Text NOT NULL)";
 
-      var Model = new DBTable(CONNECTION_STRING_NAME);
+      var Model = new SQLServerTable<Transaction>(CONNECTION_STRING_NAME);
       Model.Execute(sql);
     }
 
@@ -63,8 +63,8 @@ namespace Tests
           + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
           + "WHERE TABLE_SCHEMA = 'dbo' "
           + "AND  TABLE_NAME = 'Transactions'";
-      var Model = new DBTable(CONNECTION_STRING_NAME);
-      var query = Model.Query(sql);
+      var Model = new SQLServerTable<Transaction>(CONNECTION_STRING_NAME);
+      var query = Model.Query<Transaction>(sql);
       if (query.Count() > 0)
       {
         exists = true;

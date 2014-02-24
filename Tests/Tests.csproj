@@ -42,13 +42,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Dynamics.cs" />
+    <Compile Include="JSON\Dynamics.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="Massive.cs" />
-    <Compile Include="MassiveList.cs" />
-    <Compile Include="MassiveSetup.cs" />
-    <Compile Include="Reads.cs" />
-    <Compile Include="Writes.cs" />
+    <Compile Include="SQLServer\Massive.cs" />
+    <Compile Include="SQLServer\MassiveList.cs" />
+    <Compile Include="SQLServer\MassiveSetup.cs" />
+    <Compile Include="JSON\Reads.cs" />
+    <Compile Include="JSON\Writes.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -63,6 +63,10 @@
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DbScripts\" />
+    <Folder Include="Postgres\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Biggy;
 using Xunit;
+using Biggy.JSON;
 
 namespace Tests
 {

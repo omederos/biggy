@@ -4,17 +4,18 @@ using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Biggy.Massive;
+using Biggy.SQLServer;
 
-namespace Biggy {
-  public class MassiveList<T> : ICollection<T> where T : new(){
+namespace Biggy.SQLServer {
+
+  public class SQLServerList<T> : ICollection<T> where T : new(){
 
     List<T> _items = null;
     public string DbDirectory { get; set; }
     public bool InMemory { get; set; }
     public string TableName { get; set; }
     public string ConnectionString { get; set; }
-    public DBTable Model { get; set; }
+    public SQLServerTable<T> Model { get; set; }
 
     public event EventHandler ItemRemoved;
     public event EventHandler ItemAdded;
@@ -22,7 +23,7 @@ namespace Biggy {
     public event EventHandler Loaded;
 
 
-    public MassiveList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") {
+    public SQLServerList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") {
       this.ConnectionString = ConfigurationManager.ConnectionStrings[connectionStringName].ConnectionString;
       if (tableName!="guess") {
         this.TableName = tableName;
@@ -30,7 +31,7 @@ namespace Biggy {
         var thingyType = this.GetType().GenericTypeArguments[0].Name;
         this.TableName = Inflector.Inflector.Pluralize(thingyType).ToLower();
       }
-      this.Model = new DBTable(connectionStringName, this.TableName, primaryKeyName);
+      this.Model = new SQLServerTable<T>(connectionStringName, this.TableName, primaryKeyName);
       this.Reload();
 
       if (this.Loaded != null) {

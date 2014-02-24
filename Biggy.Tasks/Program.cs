@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using Biggy.Extensions;
 using System.Diagnostics;
-using Biggy.Massive;
+using Biggy.SQLServer;
+using Biggy.JSON;
 
 namespace Biggy.Tasks {
 
@@ -57,11 +58,11 @@ namespace Biggy.Tasks {
 
     }
     static void TalkToPG() {
-      var table = new PGTable("northwindPG", "products", "productid");
-      var list = table.All();
-      foreach (var p in list) {
-        Console.WriteLine(p.productid);
-      }
+      //var table = new PGTable<Product>("northwindPG", "products", "productid");
+      //var list = table.All<Product>();
+      //foreach (var p in list) {
+      //  Console.WriteLine(p.productid);
+      //}
     }
     //static void WhatWhat() {
 

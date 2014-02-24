@@ -102,6 +102,22 @@ namespace Biggy.Extensions {
       return item;
     }
 
+    public static T To<T>(this ExpandoObject ex) where T : new() {
+      var item = new T();
+      var dict = ex as IDictionary<string, object>;
+
+      var props = item.GetType().GetProperties();
+      foreach (var key in dict.Keys) {
+
+        foreach (var prop in props) {
+          if (key.Equals(prop.Name, StringComparison.OrdinalIgnoreCase)) {
+            prop.SetValue(item, dict[key]);
+          }
+        }
+      }
+      return item;
+    }
+
     /// <summary>
     /// Turns the object into an ExpandoObject
     /// </summary>

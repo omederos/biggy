@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Biggy;
-using Biggy.Massive;
+using Biggy.SQLServer;
 using Xunit;
 
 namespace Tests
@@ -24,17 +24,8 @@ namespace Tests
     static string _connectionStringName = MassiveSetup.CONNECTION_STRING_NAME;
     static string _testTableName = MassiveSetup.TEST_TABLE_NAME;
     static string _tablePkColumn = MassiveSetup.TABLE_PK_COLUMN;
-    DBTable _model = null;
+    DBTable<Transaction> _model = null;
 
-    [Fact(DisplayName = "Connects to the Sample Db from App_Config")]
-    public void _Connects_To_Sample_Db()
-    {
-      _model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
-      var cn = _model.OpenConnection();
-      Assert.True(cn != null && cn.State == System.Data.ConnectionState.Open);
-      cn.Close();
-      cn.Dispose();
-    }
 
     [Fact(DisplayName = "Test Table Exists")]
     public void _Test_Table_Exists()
@@ -54,7 +45,7 @@ namespace Tests
         Comment = "I Overspent!",
         Identifier = "XXX"
       };
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       var inserted = model.Insert(newRecord);
       Assert.True(newRecord.TransactionId > 0);     
     }
@@ -70,7 +61,7 @@ namespace Tests
         Comment = "I Anonymously Overspent!",
         Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
       };
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       var inserted = model.Insert(newRecord);
       Assert.True(inserted.TransactionId > 0);
     }
@@ -82,7 +73,7 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 10000;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
       Assert.True(inserted == qty);
     }
@@ -91,7 +82,7 @@ namespace Tests
     public void _Updates_Typed_Record()
     {
       _setup.CheckSetUp();
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
         Amount = 100,
@@ -117,8 +108,8 @@ namespace Tests
     public void _Updates_Anonymous_Record()
     {
       _setup.CheckSetUp();
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
-      var newRecord = new
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new Transaction
       {
         Amount = 100,
         Comment = "I Anonymously Overspent!",
@@ -134,7 +125,7 @@ namespace Tests
       int updated = model.Update(updateThis, recordPk);
 
       // Retrieve the updated item from the Db:
-      var updatedRecord = model.Find(recordPk);
+      var updatedRecord = model.Find<Transaction>(recordPk);
 
       Assert.True(updated > 0 && updatedRecord.Identifier == updateThis.Identifier);
     }
@@ -144,7 +135,7 @@ namespace Tests
     public void _Deletes_Typed_Record()
     {
       _setup.CheckSetUp();
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       var newRecord = new Transaction()
       {
         Amount = 100,
@@ -156,7 +147,7 @@ namespace Tests
 
       newRecord = model.Find<Transaction>(recordPk);
       int deleted = model.Delete(newRecord.TransactionId);
-      newRecord = model.Find(recordPk);
+      newRecord = model.Find<Transaction>(recordPk);
 
       Assert.True(deleted > 0 && newRecord == null);
     }
@@ -166,20 +157,22 @@ namespace Tests
     public void _Deletes_Anonymous_Record()
     {
       _setup.CheckSetUp();
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
-      var newRecord = new
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
+      var newRecord = new 
       {
         Amount = 100,
         Comment = "I Anonymously Overspent!",
         Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
       };
+      //HACK - you can't interrogate the new record like you were doing...
       var result = model.Insert(newRecord);
-      int recordPk = result.TransactionId;
+      //WTF WHY IS THIS COMING BACK AS A DECIMAL
+      var recordPk = result.TransactionId;
 
       // Retrieve the updated item from the Db:
-      var recordToDelete = model.Find(recordPk);
+      var recordToDelete = model.Find<Transaction>(recordPk);
       int deleted = model.Delete(recordToDelete.TransactionId);
-      recordToDelete = model.Find(recordPk);
+      recordToDelete = model.Find<Transaction>(recordPk);
 
       Assert.True(deleted > 0 && recordToDelete == null);
     }
@@ -191,7 +184,7 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 100;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
       int findRecordPk = 50;
@@ -206,11 +199,11 @@ namespace Tests
       _setup.CheckSetUp();
       int qty = 100;
       var newTransactions = _setup.getSkinnyTransactionSet(qty);
-      var model = new DBTable(_connectionStringName, _testTableName, _tablePkColumn);
+      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       int inserted = model.BulkInsert(newTransactions);
 
       int findRecordPk = 50;
-      var newRecord = model.Find(findRecordPk);
+      var newRecord = model.Find<Transaction>(findRecordPk);
       Assert.True(newRecord != null);
     }
 

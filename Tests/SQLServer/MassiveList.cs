@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Biggy;
-using Biggy.Massive;
+using Biggy.SQLServer;
 
 namespace Tests
 {
@@ -17,21 +17,21 @@ namespace Tests
     static string _connectionStringName = MassiveSetup.CONNECTION_STRING_NAME;
     static string _testTableName = MassiveSetup.TEST_TABLE_NAME;
     static string _tablePkColumn = MassiveSetup.TABLE_PK_COLUMN;
-    MassiveList<Transaction> _transactions = null;
+    SQLServerList<Transaction> _transactions = null;
     int _qtyCrapTons = 10000;
 
     public MassiveList()
     {
       // Make sure tests can run independently:
       _setup.CheckSetUp();
-      _transactions = new MassiveList<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
+      _transactions = new SQLServerList<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
     }
 
 
     [Fact(DisplayName = "Loads Empty list from Db into memory")]
     public void _Loads_Empty_List_Into_Memory()
     {
-      _transactions = new MassiveList<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
+      _transactions = new SQLServerList<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
       Assert.True(_transactions != null && _transactions.Count() == 0);
     }
 
