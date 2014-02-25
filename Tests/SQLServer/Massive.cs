@@ -51,20 +51,20 @@ namespace Tests
     }
 
 
-    [Fact(DisplayName = "Inserts a Single Anonymous Record")]
-    public void _Inserts_Single_Anonymous_Record()
-    {
-      _setup.CheckSetUp();
-      dynamic newRecord = new
-      {
-        Amount = 100,
-        Comment = "I Anonymously Overspent!",
-        Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
-      };
-      var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
-      var inserted = model.Insert(newRecord);
-      Assert.True(inserted.TransactionId > 0);
-    }
+    //[Fact(DisplayName = "Inserts a Single Anonymous Record")]
+    //public void _Inserts_Single_Anonymous_Record()
+    //{
+    //  _setup.CheckSetUp();
+    //  dynamic newRecord = new
+    //  {
+    //    Amount = 100,
+    //    Comment = "I Anonymously Overspent!",
+    //    Identifier = "YYZ" // Bah da-bah-bah-bah da bah-bah-bah-bah
+    //  };
+    //  var model = new SQLServerTable<Transaction>(_connectionStringName, _testTableName, _tablePkColumn);
+    //  var inserted = model.Insert(newRecord);
+    //  Assert.True(inserted.TransactionId > 0);
+    //}
 
 
     [Fact(DisplayName = "Inserts 12 metric crap-loads of new records")]

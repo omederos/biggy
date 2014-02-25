@@ -5,6 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Tests {
+
+  public class Actor {
+    public int Actor_ID { get; set; }
+    public string First_Name { get; set; }
+    public string Last_Name { get; set; }
+    public string FullName {
+      get {
+        return this.First_Name + " " + this.Last_Name;
+      }
+    }
+
+    public override bool Equals(object obj) {
+      var p1 = (Actor)obj;
+      return this.Actor_ID == p1.Actor_ID;
+    }
+
+  }
+
   public class Product {
     public String Sku { get; set; }
     public String Name { get; set; }

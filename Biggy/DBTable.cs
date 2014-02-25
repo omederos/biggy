@@ -233,14 +233,15 @@ namespace Biggy
       var stub = "INSERT INTO {0} ({1}) \r\n VALUES ({2})";
       result = CreateCommand(stub, null);
       int counter = 0;
-
+      if (PkIsIdentityColumn) {
+        var col = settings.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+        settings.Remove(col);
+      }
       foreach (var item in settings) {
-        if (PkIsIdentityColumn &! item.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase)) {
-          sbKeys.AppendFormat("{0},", item.Key);
-          sbVals.AppendFormat("@{0},", counter.ToString());
-          result.AddParam(item.Value);
-          counter++;
-        }
+        sbKeys.AppendFormat("{0},", item.Key);
+        sbVals.AppendFormat("@{0},", counter.ToString());
+        result.AddParam(item.Value);
+        counter++;
       }
       if (counter > 0) {
         var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 1);
@@ -266,7 +267,8 @@ namespace Biggy
 
       // Remove identity column - "can't touch this..."
       if (PkIsIdentityColumn) {
-        schema.Remove(PrimaryKeyField);
+        var col = schema.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+        schema.Remove(col);
       }
 
       var sbFieldNames = new StringBuilder();
@@ -296,7 +298,8 @@ namespace Biggy
         // Can't insert against an Identity field:
         var itemSchema = (IDictionary<string, object>)ex;
         if (PkIsIdentityColumn) {
-          itemSchema.Remove(PrimaryKeyField);
+          var col = itemSchema.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+          itemSchema.Remove(col);
         }
         var sbParamGroup = new StringBuilder();
         foreach (var fieldValue in itemSchema.Values) {
@@ -398,7 +401,7 @@ namespace Biggy
 
       var rowsAffected = 0;
       if (items.Count() > 0) {
-        using (dynamic conn = OpenConnection()) {
+        using (var conn = OpenConnection()) {
           var commands = CreateInsertBatchCommands(items);
           foreach (var cmd in commands) {
             cmd.Connection = conn;

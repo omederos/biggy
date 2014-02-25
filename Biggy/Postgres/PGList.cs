@@ -51,27 +51,21 @@ namespace Biggy.Postgres {
       _items = this.Model.All<T>().ToList();
     }
 
-    public void Update(T item) {
+    public int Update(T item) {
+      var updated = 0;
       var index = _items.IndexOf(item);
       if (index > -1) {
-        this.Model.Update(item);
+        updated = this.Model.Update(item);
         _items.RemoveAt(index);
         _items.Insert(index, item);
-      } else {
-        this.Model.Insert(item);
-        Add(item);
       }
+      return updated;
     }
 
     public void Add(T item) {
-      if (_items.Contains(item)) {
-        //let's not overwrite -- this will be determined by
-        //item.Equals()
-        this.Update(item);
-      } else {
-        this.Model.Insert(item);
-        _items.Add(item);
-      }
+      this.Model.Insert(item);
+      _items.Add(item);
+
       if (this.ItemAdded != null) {
         var args = new BiggyEventArgs<T>();
         args.Item = item;
@@ -128,6 +122,23 @@ namespace Biggy.Postgres {
         this.Changed.Invoke(this, args);
       }
       return _items.Remove(item);
+    }
+
+    public int RemoveSet(IEnumerable<T> list) {
+      var removed = 0;
+      if (list.Count() > 0) {
+        //remove from the DB
+        var keyList = new List<string>();
+        foreach (var item in list) {
+          keyList.Add(this.Model.GetPrimaryKey(item).ToString());
+        }
+        var keySet = String.Join(",", keyList.ToArray());
+        var inStatement = this.Model.PrimaryKeyField + " IN (" + keySet + ")";
+        removed = this.Model.DeleteWhere(inStatement, "");
+
+        this.Reload();
+      }
+      return removed;
     }
 
     public IEnumerator<T> GetEnumerator() {
