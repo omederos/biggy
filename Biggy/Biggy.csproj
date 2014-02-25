@@ -53,6 +53,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes.cs" />
     <Compile Include="BiggyEventArgs.cs" />
     <Compile Include="JSON\BiggyList.cs" />
     <Compile Include="JSON\BiggyDB.cs" />

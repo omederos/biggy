@@ -3,8 +3,21 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Biggy;
 
 namespace Tests {
+
+
+  public class Film {
+    public int Film_ID { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public DateTime ReleaseYear { get; set; }
+    public int Length { get; set; }
+
+    [PGFullText("fulltext")]
+    public string FullText { get; set; }
+  }
 
   public class Actor {
     public int Actor_ID { get; set; }

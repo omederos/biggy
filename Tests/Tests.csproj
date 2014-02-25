@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Helpers.cs" />
+    <Compile Include="Postgres\FullText.cs" />
     <Compile Include="Postgres\ListCRUD.cs" />
     <Compile Include="SQLServer\Massive.cs" />
     <Compile Include="SQLServer\MassiveList.cs" />

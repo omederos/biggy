@@ -149,5 +149,12 @@ namespace Biggy.Postgres {
       return _items.GetEnumerator();
     }
 
+    public IEnumerable<T> FullTextOnTheFly(string query, params string[] columns) {
+      return this.Model.FullTextOnTheFly(query, columns);
+    }
+    public IEnumerable<T> FullText(string query) {
+      return this.Model.FullText(query);
+    }
+
   }
 }

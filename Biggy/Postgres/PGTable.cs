@@ -52,5 +52,39 @@ namespace Biggy.Postgres {
       return " RETURNING " + this.PrimaryKeyField + " as newId";
     }
 
+    public IEnumerable<T> FullTextOnTheFly(string query, params string[] columns) {
+      var columnList = String.Join(" || ", columns);
+      var sql = string.Format("SELECT * FROM {0} WHERE to_tsvector('english', {1}) @@ to_tsquery(@0);", TableName, columnList);
+      return Query<T>(sql, query);
+    }
+
+    public IEnumerable<T> FullText(string query) {
+
+      //var sql = string.Format("SELECT * FROM {0} WHERE to_tsvector('english', {1}) @@ to_tsquery(@0);", TableName, columnList);
+      //find the column
+      var item = new T();
+      var props = item.GetType().GetProperties();
+      //we're looking for a PGFullText attribute
+      string columnName = null;
+
+      //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
+      //I think it's because of assembly issues?
+      foreach (var prop in props) {
+        foreach (var att in prop.CustomAttributes) {
+          if(att.AttributeType == typeof(PGFullTextAttribute)){
+            columnName = prop.Name;
+            break;
+          }
+        }
+      }
+      
+      if(columnName == null){
+        throw new InvalidOperationException("Can't find a PGFullText attribute on " + typeof(T).Name + " - please be sure to add that");
+      }
+      var sql = string.Format("select *, ts_rank_cd({2},to_tsquery(@0)) as rank from {1} where {2} @@ to_tsquery(@0) order by rank DESC;",query,TableName,columnName);
+      return Query<T>(sql, query);
+
+    }
+
   }
 }
