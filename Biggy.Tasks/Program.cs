@@ -9,6 +9,7 @@ using System.Diagnostics;
 using Biggy.SQLServer;
 using Biggy.JSON;
 using System.IO;
+using Biggy.Postgres;
 
 namespace Biggy.Tasks {
 
@@ -47,49 +48,48 @@ namespace Biggy.Tasks {
 
   }
 
+  class Actor {
+    public int Actor_ID { get; set; }
+    public string First_Name { get; set; }
+    public string Last_Name { get; set; }
+    public string FullName {
+      get {
+        return this.First_Name + " " + this.Last_Name;
+      }
+    }
+  }
 
   class Program {
     static void Main(string[] args) {
 
-      RunBenchmarks();
+      //RunBenchmarks();
+      TalkToPG();
       Console.Read();
 
     }
+
     static void TalkToPG() {
-      //var table = new PGTable<Product>("northwindPG", "products", "productid");
-      //var list = table.All<Product>();
-      //foreach (var p in list) {
-      //  Console.WriteLine(p.productid);
-      //}
+
+      var actors = new PGList<Actor>("dvds", "actor", "actor_id");
+      foreach (var actor in actors) {
+        Console.WriteLine(actor.FullName);
+      }
+
+      var a1 = actors.FirstOrDefault(x => x.FullName == "Thora Temple");
+      Console.WriteLine("****{0}*****",a1.FullName);
+
+
+      var newActor = new Actor { First_Name = "Rob", Last_Name = "Conery" };
+      actors.Add(newActor);
+
+      var me = actors.FirstOrDefault(x => x.FullName == "Rob Conery");
+      me.First_Name = "Steve";
+      actors.Update(me);
+
+      actors.Remove(me);
+
     }
-    //static void WhatWhat() {
 
-    //  var sw = new Stopwatch();
-    //  sw.Start();
-    //  var products = new MassiveList<NWProduct>(connectionStringName: "northwind", tableName: "products", primaryKeyName: "productid");
-    //  sw.Stop();
-    //  Console.WriteLine("Read " + products.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
-    //  foreach (var p in products) {
-    //    Console.WriteLine(p.Sku);
-    //  }
-
-    //  sw.Reset();
-    //  sw.Start();
-    //  var readOne = products.FirstOrDefault(x => x.ProductName == "Product24");
-    //  Console.WriteLine(readOne.ProductName);
-    //  sw.Stop();
-
-    //  Console.WriteLine("Read single in " + sw.ElapsedMilliseconds + "ms");
-    //  sw.Reset();
-    //  sw.Start();
-    //  var details = new MassiveList<OrderDetail>(connectionStringName: "northwind", tableName: "orderdetails", primaryKeyName: "orderdetailid");
-    //  sw.Stop();
-
-    //  Console.WriteLine("Read " + details.Count + " into memory in " + sw.ElapsedMilliseconds + "ms");
-
-
-    //  Console.Read();
-    //}
 
     static void RunBenchmarks() {
       Console.WriteLine("Writing 1000 records sync");

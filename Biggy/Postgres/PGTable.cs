@@ -8,7 +8,7 @@ using Npgsql;
 using Biggy.Extensions;
 using System.Data.Common;
 
-namespace Biggy.SQLServer {
+namespace Biggy.Postgres {
 
   public class PGTable<T> : DBTable<T> where T : new() {
 
@@ -44,6 +44,9 @@ namespace Biggy.SQLServer {
       }
 
       return sql;
+    }
+    protected override string GetSingleSelect(string where) {
+      return string.Format("SELECT * FROM {0} WHERE {1} LIMIT 1", TableName, where);
     }
     public override string GetInsertReturnValueSQL() {
       return " RETURNING " + this.PrimaryKeyField + " as newId";

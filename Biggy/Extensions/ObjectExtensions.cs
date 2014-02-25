@@ -131,7 +131,9 @@ namespace Biggy.Extensions {
       } else {
         var props = o.GetType().GetProperties();
         foreach (var item in props) {
-          d.Add(item.Name, item.GetValue(o, null));
+          if (item.CanWrite) {
+            d.Add(item.Name, item.GetValue(o, null));
+          }
         }
       }
       return result;

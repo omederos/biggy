@@ -58,12 +58,14 @@ namespace Biggy
     public object GetPrimaryKey(object o)
     {
       object result = null;
-      o.ToDictionary().TryGetValue(PrimaryKeyField, out result);
+      var lookup = o.ToDictionary();
+      var found = lookup.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+      result = found.Value;
       return result;
     }
 
     public void SetPrimaryKey(T item, object value) {
-      var pkProp = item.GetType().GetProperty(this.PrimaryKeyField);
+      var pkProp = item.GetType().GetProperties().FirstOrDefault(x => x.Name.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
       var converted = Convert.ChangeType(value, pkProp.PropertyType);
       pkProp.SetValue(item, converted);
     }
@@ -130,11 +132,11 @@ namespace Biggy
     /// These objects can be POCOs, Anonymous, NameValueCollections, or Expandos. Objects
     /// With a PK property (whatever PrimaryKeyField is set to) will be created at UPDATEs
     /// </summary>
-    public List<DbCommand> BuildCommands(params object[] things) {
+    public List<DbCommand> BuildCommands(params T[] things) {
       var commands = new List<DbCommand>();
       foreach (var item in things) {
         if (HasPrimaryKey(item)) {
-          commands.Add(CreateUpdateCommand(item.ToExpando(), GetPrimaryKey(item)));
+          commands.Add(CreateUpdateCommand(item));
         } else {
           commands.Add(CreateInsertCommand(item.ToExpando()));
         }
@@ -179,13 +181,13 @@ namespace Biggy
     }
 
     protected abstract string BuildSelect(string where, string orderBy, int limit);
-
+    protected abstract string GetSingleSelect(string where);
     /// <summary>
     /// Returns a single row from the database
     /// </summary>
     public T FirstOrDefault<T>(string where, params object[] args) where T: new() {
       var result = new T();
-      var sql = string.Format("SELECT TOP 2 * FROM {0} WHERE {1}", TableName, where);
+      var sql = GetSingleSelect(where);
       return Query<T>(sql, args).FirstOrDefault();
     }
 
@@ -194,7 +196,7 @@ namespace Biggy
     /// </summary>
     public T Find<T>(object key) where T : new() {
       var result = new T();
-      var sql = string.Format("SELECT TOP 2 * FROM {0} WHERE {1} = @0", TableName, PrimaryKeyField);
+      var sql = GetSingleSelect(PrimaryKeyField + "=@0");
       return Query<T>(sql, key).FirstOrDefault();
     }
 
@@ -217,32 +219,28 @@ namespace Biggy
     /// These objects can be POCOs, Anonymous, NameValueCollections, or Expandos. Objects
     /// With a PK property (whatever PrimaryKeyField is set to) will be created at UPDATEs
     /// </summary>
-    public virtual int Save(params object[] things) {
-      foreach (var item in things) {
-        if (!IsValid(item)) {
-          throw new InvalidOperationException("Can't save this item: " + String.Join("; ", Errors.ToArray()));
-        }
-      }
+    public virtual int Save(params T[] things) {
       var commands = BuildCommands(things);
       return Execute(commands);
     }
 
-    DbCommand CreateInsertCommand(dynamic expando) {
+    DbCommand CreateInsertCommand(T insertItem) {
       DbCommand result = null;
+      var expando = insertItem.ToExpando();
       var settings = (IDictionary<string, object>)expando;
       var sbKeys = new StringBuilder();
       var sbVals = new StringBuilder();
       var stub = "INSERT INTO {0} ({1}) \r\n VALUES ({2})";
       result = CreateCommand(stub, null);
       int counter = 0;
-      if (PkIsIdentityColumn) {
-        settings.Remove(PrimaryKeyField);
-      }
+
       foreach (var item in settings) {
-        sbKeys.AppendFormat("{0},", item.Key);
-        sbVals.AppendFormat("@{0},", counter.ToString());
-        result.AddParam(item.Value);
-        counter++;
+        if (PkIsIdentityColumn &! item.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase)) {
+          sbKeys.AppendFormat("{0},", item.Key);
+          sbVals.AppendFormat("@{0},", counter.ToString());
+          result.AddParam(item.Value);
+          counter++;
+        }
       }
       if (counter > 0) {
         var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 1);
@@ -318,7 +316,9 @@ namespace Biggy
     /// <summary>
     /// Creates a command for use with transactions - internal stuff mostly, but here for you to play with
     /// </summary>
-    DbCommand CreateUpdateCommand(dynamic expando, object key) {
+    DbCommand CreateUpdateCommand(T updateItem) {
+      var expando = updateItem.ToExpando();
+      var key = GetPrimaryKey(updateItem);
       var settings = (IDictionary<string, object>)expando;
       var sbKeys = new StringBuilder();
       var stub = "UPDATE {0} SET {1} WHERE {2} = @{3}";
@@ -361,27 +361,18 @@ namespace Biggy
       return CreateCommand(sql, null, args);
     }
 
-    public bool IsValid(dynamic item) {
-      Errors.Clear();
-      Validate(item);
-      return Errors.Count == 0;
-    }
-
     //Temporary holder for error messages
     public IList<string> Errors = new List<string>();
 
     public abstract string GetInsertReturnValueSQL();
 
-
     public T Insert (T item) {
-      var ex = item.ToExpando();
-      if (!IsValid(ex)) {
-        throw new InvalidOperationException("Can't insert: " + String.Join("; ", Errors.ToArray()));
-      }
-      if (BeforeSave(ex)) {
-        using (DbConnection conn = OpenConnection()) {
-          var cmd = (DbCommand)CreateInsertCommand(ex);
-          cmd.CommandText += ";" + this.GetInsertReturnValueSQL();
+      //var ex = item.ToExpando();
+
+      if (BeforeSave(item)) {
+        using (var conn = OpenConnection()) {
+          var cmd = (DbCommand)CreateInsertCommand(item);
+          cmd.CommandText += this.GetInsertReturnValueSQL();
           var newId = cmd.ExecuteScalar();
           this.SetPrimaryKey(item, newId);
         }
@@ -391,45 +382,13 @@ namespace Biggy
     }
 
     /// <summary>
-    /// Adds a record to the database. You can pass in an Anonymous object, an ExpandoObject,
-    /// A regular old POCO, or a NameValueColletion from a Request.Form or Request.QueryString
-    /// </summary>
-    public dynamic Insert(object o) {
-      var ex = o.ToExpando();
-      if (!IsValid(ex)) {
-        throw new InvalidOperationException("Can't insert: " + String.Join("; ", Errors.ToArray()));
-      }
-      if (BeforeSave(ex)) {
-        using (DbConnection conn = OpenConnection()) {
-          var cmd = (DbCommand)CreateInsertCommand(ex);
-          cmd.Connection = conn;
-          cmd.ExecuteNonQuery();
-          if (PkIsIdentityColumn)
-          {
-            cmd.CommandText += ";" + this.GetInsertReturnValueSQL();
-            // Work with expando as dictionary:
-            var d = ex as IDictionary<string, object>;
-            // Set the new identity/PK:
-            var newID = cmd.ExecuteScalar();
-            d[PrimaryKeyField] = newID;
-          }
-          Inserted(ex);
-          
-        }
-        return ex;
-      } else {
-        return null;
-      }
-    }
-
-    /// <summary>
     /// Inserts a large range - does not check for existing entires, and assumes all 
     /// included records are new records. Order of magnitude more performant than standard
     /// Insert method for multiple sequential inserts. 
     /// </summary>
     /// <param name="items"></param>
     /// <returns></returns>
-    public int BulkInsert<T>(List<T> items) {
+    public int BulkInsert(List<T> items) {
       var first = items.First();
       var ex = first.ToExpando();
       var itemSchema = (IDictionary<string, object>)ex;
@@ -450,37 +409,18 @@ namespace Biggy
       return rowsAffected;
     }
 
-    /// <summary>
-    /// Updates a record in the database. You can pass in an Anonymous object, an ExpandoObject,
-    /// A regular old POCO, or a NameValueCollection from a Request.Form or Request.QueryString
-    /// </summary>
-    public int Update(object o, object key) {
-      var ex = o.ToExpando();
-      if (!IsValid(ex)) {
-        throw new InvalidOperationException("Can't Update: " + String.Join("; ", Errors.ToArray()));
-      }
-      var result = 0;
-      if (BeforeSave(ex)) {
-        result = Execute(CreateUpdateCommand(ex, key));
-        Updated(ex);
-      }
-      return result;
-    }
 
-
-    public int Update<T>(T o)
+    public int Update(T item)
     {
-      var ex = o.ToExpando();
-      var d = (IDictionary<string, object>)ex;
-      if (HasPrimaryKey(o))
-      {
-        var pkValue = d[this.PrimaryKeyField];
-        return this.Update(o, pkValue);
+      var result = 0;
+      if (BeforeSave(item)) {
+        using (var conn = OpenConnection()) {
+          var cmd = (DbCommand)CreateUpdateCommand(item);
+          result = cmd.ExecuteNonQuery();
+        }
       }
-      else
-      {
-        throw new InvalidOperationException("No Pirmary Key Specified - Can't parse unique record to update");
-      }
+
+      return result;
     }
 
     /// <summary>
@@ -504,42 +444,13 @@ namespace Biggy
     }
 
     //Hooks
-    public virtual void Validate(dynamic item) { }
-    public virtual void Inserted(dynamic item) { }
-    public virtual void Updated(dynamic item) { }
-    public virtual void Deleted(dynamic item) { }
-    public virtual bool BeforeDelete(dynamic item) { return true; }
-    public virtual bool BeforeSave(dynamic item) { return true; }
+    public virtual void Validate(T item) { }
+    public virtual void Inserted(T item) { }
+    public virtual void Updated(T item) { }
+    public virtual void Deleted(T item) { }
+    public virtual bool BeforeDelete(T item) { return true; }
+    public virtual bool BeforeSave(T item) { return true; }
 
-    //validation methods
-    public virtual void ValidatesPresenceOf(object value, string message = "Required") {
-      if (value == null) {
-        Errors.Add(message);
-      }
-      if (String.IsNullOrEmpty(value.ToString())) {
-        Errors.Add(message);
-      }
-    }
-
-    //fun methods
-    public virtual void ValidatesNumericalityOf(object value, string message = "Should be a number") {
-      var type = value.GetType().Name;
-      var numerics = new string[] { "Int32", "Int16", "Int64", "Decimal", "Double", "Single", "Float" };
-      if (!numerics.Contains(type)) {
-        Errors.Add(message);
-      }
-    }
-
-    public virtual void ValidateIsCurrency(object value, string message = "Should be money") {
-      if (value == null) {
-        Errors.Add(message);
-      }
-      decimal val = decimal.MinValue;
-      decimal.TryParse(value.ToString(), out val);
-      if (val == decimal.MinValue) {
-        Errors.Add(message);
-      }
-    }
 
     public int Count() {
       return Count(TableName);

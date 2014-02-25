@@ -56,7 +56,7 @@ namespace Biggy.SQLServer {
     public void Update(T item) {
       var index = _items.IndexOf(item);
       if (index > -1) {
-        this.Model.Update(item, this.Model.GetPrimaryKey(item));
+        this.Model.Update(item);
         _items.RemoveAt(index);
         _items.Insert(index, item);
       } else {

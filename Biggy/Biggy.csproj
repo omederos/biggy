@@ -59,6 +59,7 @@
     <Compile Include="Extensions\JsonExtensions.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="DBTable.cs" />
+    <Compile Include="Postgres\PGList.cs" />
     <Compile Include="Postgres\PGTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SQLServer\SQLServerList.cs" />

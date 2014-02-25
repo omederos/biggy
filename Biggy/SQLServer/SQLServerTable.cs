@@ -33,9 +33,11 @@ namespace Biggy.SQLServer {
       }
       return sql;
     }
-
+    protected override string GetSingleSelect(string where) {
+      return string.Format("SELECT TOP 2 * FROM {0} WHERE {1}", TableName, where);
+    }
     public override string GetInsertReturnValueSQL() {
-      return "SELECT SCOPE_IDENTITY() as newID";
+      return "; SELECT SCOPE_IDENTITY() as newID";
     }
   }
 }
