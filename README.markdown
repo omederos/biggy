@@ -144,10 +144,17 @@ Writing 1000 records in a batch takes about 30ms (give or take), writing in a lo
 There's a lot to do to make this a bit more functional, but for now it does what I envisioned.
 
 
+## NuGet
+
+Yes, it's on NuGet!
+
+```
+Install-Package Biggy
+```
+
 ## Wanna Help?
 
 Please do! This is rough stuff that I put together one morning just wondering if I could do it. I'd love your help if you're game.
-
 
 
 
