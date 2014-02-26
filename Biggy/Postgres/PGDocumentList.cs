@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Biggy.Extensions;
 using System.Data.Common;
+using System.Collections.Specialized;
+
 
 namespace Biggy.Postgres {
 
@@ -121,15 +123,65 @@ namespace Biggy.Postgres {
       base.Add(item);
     }
 
-    //HACK - this is slow, fix it
+    // This performs a little better, but still needs to be optimized somewhere. 
+    // Currently does 1000 records in ~ 100 ms, 10,000 in about 5,500 ms. 
+    // Protect your eyes. This here be some ugly code for the moment. 
     public int AddRange(List<T> items) {
-      var added = 0;
+      const int MAGIC_PG_PARAMETER_LIMIT = 34464;
+
+      // ?? Unknown. Set this arbitrarily for now, haven't run into a limit yet. 
+      const int MAGIC_PG_ROW_VALUE_LIMIT = 10000; 
+
+      string stub = "INSERT INTO {0} ({1}) VALUES ";
+      var first = items.First();
+      var expando = this.SetDataForDocument(first);
+      var schema = expando as IDictionary<string, object>;
+
+      var insertClause = string.Format(stub, this.TableName, string.Join(", ", schema.Keys));
+      var sbSql = new StringBuilder(insertClause);
+
+      var paramCounter = 0;
+      var rowValueCounter = 0;
+      var commands = new List<DbCommand>();
+      DbCommand dbCommand = Model.CreateCommand("", null);
+
       foreach (var item in items) {
-        this.Add(item);
-        added++;
+        var itemEx = SetDataForDocument(item);
+        var itemSchema = itemEx as IDictionary<string, object>;
+        var sbParamGroup = new StringBuilder();
+        foreach (var key in itemSchema.Keys) {
+          // Things explode if you exceed the param limit for pg:
+          if (paramCounter + schema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
+            // Add the current command to the list, then start over with another:
+            dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+            commands.Add(dbCommand);
+            sbSql = new StringBuilder(insertClause);
+            paramCounter = 0;
+            rowValueCounter = 0;
+            dbCommand = Model.CreateCommand("", null);
+          }
+          if (key == "search") {
+            sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
+          } else {
+            sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
+          }
+          dbCommand.AddParam(itemSchema[key]);
+          paramCounter++;
+        }
+        // Add the row params to the end of the sql:
+        sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
+        rowValueCounter++;
       }
-      return added;
+      dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+      commands.Add(dbCommand);
+
+      int rowsAffected = 0;
+      foreach (var cmd in commands) {
+        rowsAffected += Model.Execute(cmd);
+      }
+      return rowsAffected;
     }
+
 
     ExpandoObject SetDataForDocument(T item) {
       var json = JsonConvert.SerializeObject(item);
@@ -150,9 +202,9 @@ namespace Biggy.Postgres {
         }
         dict["search"] = string.Join(",", vals);
       }
-      
       return expando;
     }
+
 
     public override int Update(T item) {
       var expando = SetDataForDocument(item);

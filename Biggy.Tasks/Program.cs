@@ -87,12 +87,15 @@ namespace Biggy.Tasks {
       m.Description = "Straight outta COMPTON";
       Console.WriteLine("Updated : {0}", monkies.Update(m));
 
+      var sw = new Stopwatch();
+      sw.Start();
       var addRange = new List<Monkey>();
       for (int i = 0; i < 1000; i++) {
-        addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today });
+        addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today, Description = "The Monkey on my back" });
       }
       var inserted = monkies.AddRange(addRange);
-      Console.WriteLine("Just inserted {0} as documents", inserted);
+      sw.Stop();
+      Console.WriteLine("Just inserted {0} as documents in {1} ms", inserted, sw.ElapsedMilliseconds);
     }
 
     static void TalkToPG() {

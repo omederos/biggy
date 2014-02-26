@@ -119,7 +119,7 @@ namespace Biggy
     /// <summary>
     /// Creates a DBCommand that you can use for loving your database.
     /// </summary>
-    protected DbCommand CreateCommand(string sql, DbConnection conn, params object[] args) {
+    public DbCommand CreateCommand(string sql, DbConnection conn, params object[] args) {
       conn = conn ?? OpenConnection();
       var result = (DbCommand)conn.CreateCommand();
       result.CommandText = sql;
