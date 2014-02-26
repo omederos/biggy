@@ -72,5 +72,15 @@ namespace Tests.Postgres {
       var inserted = monkies.AddRange(addRange);
       Assert.True(inserted == INSERT_QTY && monkies.Count == inserted);
     }
+
+    [Fact(DisplayName = "Will create a table with serial PK")]
+    public void CreatesSerialPK() {
+      var actors = new PGDocumentList<Actor>("northwindPG");
+      var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
+      actors.Add(newActor);
+      Assert.True(newActor.Actor_ID > 0);
+      
+    }
+
   }
 }

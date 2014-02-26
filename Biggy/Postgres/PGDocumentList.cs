@@ -29,7 +29,8 @@ namespace Biggy.Postgres {
       DecideTableName();
       AssureKeyForT();
       SetFullTextColumns();
-      this.Model = new PGTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, this.PrimaryKeyType == typeof(int));
+      var pkIsIdentity = this.PrimaryKeyType == typeof(int);
+      this.Model = new PGTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, pkIsIdentity);
       TryLoadData();
     }
 
@@ -81,7 +82,7 @@ namespace Biggy.Postgres {
         if (x.Message.Contains("does not exist")) {
 
           //create the table
-          var idType = this.PrimaryKeyType == typeof(int) ? "int serial" : "varchar(255)";
+          var idType = this.PrimaryKeyType == typeof(int) ? " serial" : "varchar(255)";
           string fullTextColumn = "";
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search tsvector";
@@ -99,7 +100,6 @@ namespace Biggy.Postgres {
 
     }
 
-    //TODO: Refactor for Adding Batch stuff
     public override void Add(T item) {
       var expando = SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
@@ -107,8 +107,13 @@ namespace Biggy.Postgres {
       var vals = new List<string>();
       var args = new List<object>();
       var index = 0;
-      foreach (var key in dc.Keys) {
 
+      var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+      if (this.Model.PkIsIdentityColumn) {
+        //don't update the Primary Key
+        dc.Remove(keyColumn);
+      }
+      foreach (var key in dc.Keys) {
         if (key == "search") {
           vals.Add(string.Format("to_tsvector(@{0})", index));
         } else {
@@ -118,14 +123,18 @@ namespace Biggy.Postgres {
         index++;
       }
       var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2});", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals));
-      var sql = sb.ToString(); this.Model.Execute(sql, args.ToArray());
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
+      var sql = sb.ToString(); 
+      var newKey = this.Model.Scalar(sql, args.ToArray());
+      //set the key
+      this.Model.SetPrimaryKey(item, newKey);
       base.Add(item);
     }
 
     // This performs a little better, but still needs to be optimized somewhere. 
     // Currently does 1000 records in ~ 100 ms, 10,000 in about 5,500 ms. 
     // Protect your eyes. This here be some ugly code for the moment. 
+    //HACK: Refactor this to be prettier and also use a Transaction
     public int AddRange(List<T> items) {
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
 

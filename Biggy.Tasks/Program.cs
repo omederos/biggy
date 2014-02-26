@@ -49,6 +49,7 @@ namespace Biggy.Tasks {
   }
 
   class Actor {
+    [PrimaryKey]
     public int Actor_ID { get; set; }
     public string First_Name { get; set; }
     public string Last_Name { get; set; }
@@ -96,6 +97,20 @@ namespace Biggy.Tasks {
       var inserted = monkies.AddRange(addRange);
       sw.Stop();
       Console.WriteLine("Just inserted {0} as documents in {1} ms", inserted, sw.ElapsedMilliseconds);
+
+      //use a DB that has an int PK
+      var actors = new PGDocumentList<Actor>("northwindPG");
+      var actor = new Actor { First_Name = "Bob", Last_Name = "Steve" };
+      actors.Add(actor);
+
+      Console.WriteLine("Just inserted actor {0}", actor.Actor_ID);
+      var bulkList = new List<Actor>();
+      for (int i = 0; i < 100; i++) {
+        var x = new Actor { First_Name = "Actor " + i, Last_Name = "Steve" };
+        bulkList.Add(x);
+      }
+      actors.AddRange(bulkList);
+      Console.WriteLine("Added 100 actors - the last key is {0}", actors.Last().Actor_ID);
     }
 
     static void TalkToPG() {
