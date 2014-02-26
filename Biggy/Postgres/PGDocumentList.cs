@@ -146,12 +146,22 @@ namespace Biggy.Postgres {
       var expando = this.SetDataForDocument(first);
       var schema = expando as IDictionary<string, object>;
 
+      var keyColumn = schema.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+      
+      //HACK: I don't like this duplication here and below... we'll refactor at some point :)
+      if (this.Model.PkIsIdentityColumn) {
+        //don't update the Primary Key
+        schema.Remove(keyColumn);
+      }
+
+
       var insertClause = string.Format(stub, this.TableName, string.Join(", ", schema.Keys));
       var sbSql = new StringBuilder(insertClause);
 
       var paramCounter = 0;
       var rowValueCounter = 0;
       var commands = new List<DbCommand>();
+      
       var conn = Model.OpenConnection();
 
       // Use the SAME connection, don't hit the pool for each command. 
@@ -161,6 +171,13 @@ namespace Biggy.Postgres {
         var itemEx = SetDataForDocument(item);
         var itemSchema = itemEx as IDictionary<string, object>;
         var sbParamGroup = new StringBuilder();
+
+        if (this.Model.PkIsIdentityColumn) {
+          //don't update the Primary Key
+          itemSchema.Remove(keyColumn);
+        }
+
+
         foreach (var key in itemSchema.Keys) {
           // Things explode if you exceed the param limit for pg:
           if (paramCounter + schema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
