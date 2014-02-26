@@ -63,7 +63,8 @@ namespace Biggy.Tasks {
     [PrimaryKey]
     public string Name { get; set; }
     public DateTime Birthday { get; set; }
-
+    [PGFullText]
+    public string Description { get; set; }
   }
 
   class Program {
@@ -79,10 +80,11 @@ namespace Biggy.Tasks {
     static void TalkToPGDocs() {
       var monkies = new PGDocumentList<Monkey>("northwindPG");
       monkies.Clear();
-      monkies.Add(new Monkey { Name = "CHUCKLES", Birthday = DateTime.Today });
+      monkies.Add(new Monkey { Name = "CHUCKLES", Birthday = DateTime.Today, Description = "A Fine Young Monkey" });
       var m = monkies.First();
       Console.WriteLine(m.Name);
       m.Birthday = DateTime.Today.AddDays(12);
+      m.Description = "Straight outta COMPTON";
       Console.WriteLine("Updated : {0}", monkies.Update(m));
 
       var addRange = new List<Monkey>();

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Biggy.Extensions;
+using System.Data.Common;
 
 namespace Biggy.Postgres {
 
@@ -15,6 +16,7 @@ namespace Biggy.Postgres {
     public PGTable<dynamic> Model { get; set; }
     public string PrimaryKeyField { get; set; }
     public Type PrimaryKeyType { get; set; }
+    public string[] FullTextFields { get; set; }
     string BaseName {
       get {
         return typeof(T).Name.ToLower();
@@ -24,6 +26,7 @@ namespace Biggy.Postgres {
     public PGDocumentList(string connectionStringName) {
       DecideTableName();
       AssureKeyForT();
+      SetFullTextColumns();
       this.Model = new PGTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, this.PrimaryKeyType == typeof(int));
       TryLoadData();
     }
@@ -31,6 +34,11 @@ namespace Biggy.Postgres {
     void DecideTableName() {
       //use the type name
       this.TableName = Inflector.Inflector.Pluralize(BaseName).ToLower();
+    }
+
+    void SetFullTextColumns() {
+      var foundProps = new T().LookForCustomAttribute(typeof(PGFullTextAttribute));
+      this.FullTextFields = foundProps.Select(x => x.Name).ToArray();
     }
 
     void AssureKeyForT() {
@@ -42,14 +50,10 @@ namespace Biggy.Postgres {
       if (conventionalKey == null) {
         //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
         //I think it's because of assembly issues?
-        foreach (var prop in props) {
-          foreach (var att in prop.CustomAttributes) {
-            if (att.AttributeType == typeof(PrimaryKeyAttribute)) {
-              this.PrimaryKeyField = prop.Name;
-              this.PrimaryKeyType = prop.PropertyType;
-              break;
-            }
-          }
+        var foundProp = new T().LookForCustomAttribute(typeof(PrimaryKeyAttribute)).FirstOrDefault();
+        if(foundProp != null){
+          this.PrimaryKeyField = foundProp.Name;
+          this.PrimaryKeyType = foundProp.PropertyType;
         }
       } else {
         this.PrimaryKeyType = typeof(int);
@@ -63,7 +67,7 @@ namespace Biggy.Postgres {
     }
 
 
-    public void Clear() {
+    public override void Clear() {
       this.Model.Execute("DELETE FROM " + TableName);
       base.Clear();
     }
@@ -76,7 +80,11 @@ namespace Biggy.Postgres {
 
           //create the table
           var idType = this.PrimaryKeyType == typeof(int) ? "int serial" : "varchar(255)";
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null);", this.TableName, this.PrimaryKeyField, idType);
+          string fullTextColumn = "";
+          if (this.FullTextFields.Length > 0) {
+            fullTextColumn = ", search tsvector";
+          }
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
           this.Model.Execute(sql);
           TryLoadData();
         } else {
@@ -88,56 +96,94 @@ namespace Biggy.Postgres {
       _items = this.Model.All<T>().ToList();
 
     }
-    public void Add(T item) {
+
+    //TODO: Refactor for Adding Batch stuff
+    public override void Add(T item) {
       var expando = SetDataForDocument(item);
-      this.Model.Insert(expando);
+      var dc = expando as IDictionary<string, object>;
+      //this.Model.Insert(expando);
+      var vals = new List<string>();
+      var args = new List<object>();
+      var index = 0;
+      foreach (var key in dc.Keys) {
+
+        if (key == "search") {
+          vals.Add(string.Format("to_tsvector(@{0})", index));
+        } else {
+          vals.Add(string.Format("@{0}", index));
+        }
+        args.Add(dc[key]);
+        index++;
+      }
+      var sb = new StringBuilder();
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2});", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals));
+      var sql = sb.ToString(); this.Model.Execute(sql, args.ToArray());
       base.Add(item);
     }
+
+    //HACK - this is slow, fix it
     public int AddRange(List<T> items) {
-      var addList = new List<dynamic>();
+      var added = 0;
       foreach (var item in items) {
-        var ex = new ExpandoObject();
-        var d = ex as IDictionary<string, object>;
-        d[PrimaryKeyField] = this.Model.GetPrimaryKey(item);
-        //TODO: this is SLOW over a large set 
-        d["Body"] = JsonConvert.SerializeObject(item);
-        addList.Add(ex);
+        this.Add(item);
+        added++;
       }
-
-      var first = addList.First();
-      var requiredParams = 2;
-      var batchCounter = requiredParams / 2000;
-
-      var rowsAffected = 0;
-      if (addList.Count() > 0) {
-        using (var conn = this.Model.OpenConnection()) {
-          var commands = this.Model.CreateInsertBatchCommands(addList);
-          foreach (var cmd in commands) {
-            cmd.Connection = conn;
-            rowsAffected += cmd.ExecuteNonQuery();
-          }
-        }
-      }
-      return rowsAffected;
-
-
-      int affected = this.Model.BulkInsert(addList);
-      this.Reload();
-      return affected;
+      return added;
     }
+
     ExpandoObject SetDataForDocument(T item) {
       var json = JsonConvert.SerializeObject(item);
       var key = this.Model.GetPrimaryKey(item);
       var expando = new ExpandoObject();
       var dict = expando as IDictionary<string, object>;
+      
       dict[PrimaryKeyField] = key;
       dict["body"] = json;
+
+      if (this.FullTextFields.Length > 0) {
+        //get the data from the item passed in
+        var itemdc = item.ToDictionary();
+        var vals = new List<string>();
+        foreach (var ft in this.FullTextFields) {
+          var val = itemdc[ft] == null ? "" : itemdc[ft].ToString();
+          vals.Add(val);
+        }
+        dict["search"] = string.Join(",", vals);
+      }
+      
       return expando;
     }
 
-    public int Update(T item) {
+    public override int Update(T item) {
       var expando = SetDataForDocument(item);
+      var dc = expando as IDictionary<string, object>;
+      //this.Model.Insert(expando);
+      var index = 0;
+      var sb = new StringBuilder();
+      var args = new List<object>();
+      sb.AppendFormat("UPDATE {0} SET ", this.TableName);
+      foreach (var key in dc.Keys) {
+        var stub = string.Format("{0}=@{1},", key, index);
+        if (key == "search") {
+          stub = string.Format("{0}=to_tsvector(@{1}),", key, index);
+        }
+        args.Add(dc[key]);
+        index++;
+        if (index == dc.Keys.Count)
+          stub = stub.Substring(0, stub.Length - 1);
+        sb.Append(stub);
+      }
+      sb.Append(";");
+      var sql = sb.ToString();
+      this.Model.Execute(sql, args.ToArray());
+      base.Update(item);
       return this.Model.Update(expando);
+    }
+
+    public override bool Remove(T item) {
+      var key = this.Model.GetPrimaryKey(item);
+      this.Model.Delete(key);
+      return base.Remove(item);
     }
   }
 }

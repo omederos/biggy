@@ -246,9 +246,16 @@ namespace Biggy
       }
       foreach (var item in settings) {
         sbKeys.AppendFormat("{0},", item.Key);
-        sbVals.AppendFormat("@{0},", counter.ToString());
-        result.AddParam(item.Value);
+
+        //this is a special case for a search directive
+        if (item.Value.ToString().StartsWith("to_tsvector")) {
+          sbVals.AppendFormat("{0},", item.Value);
+        } else {
+          sbVals.AppendFormat("@{0},", counter.ToString());
+          result.AddParam(item.Value);
+        }
         counter++;
+
       }
       if (counter > 0) {
         var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 1);

@@ -19,13 +19,14 @@ namespace Biggy {
       this.Clear();
     }
 
-    public virtual void Update(T item) {
+    public virtual int Update(T item) {
       var index = _items.IndexOf(item);
       if (index > -1) {
         _items.RemoveAt(index);
         _items.Insert(index, item);
       }
       FireChangedEvents();
+      return 1;
     }
 
     public virtual void Add(T item) {

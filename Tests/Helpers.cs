@@ -15,8 +15,24 @@ namespace Tests {
     public DateTime ReleaseYear { get; set; }
     public int Length { get; set; }
 
-    [PGFullText("fulltext")]
+    [PGFullText]
     public string FullText { get; set; }
+  }
+
+  public class CustomerDocument {
+    [PrimaryKey]
+    public string Email { get; set; }
+    public string First { get; set; }
+    public string Last { get; set; }
+    public string FullName {
+      get {
+        return First + " " + Last;
+      }
+    }
+    public override bool Equals(object obj) {
+      var c = (CustomerDocument)obj;
+      return this.Email == c.Email;
+    }
   }
 
   public class Actor {

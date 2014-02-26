@@ -5,12 +5,25 @@ using System.Data;
 using System.Data.Common;
 using System.Dynamic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Biggy.Extensions {
   public static class ObjectExtensions {
 
+    public static List<PropertyInfo> LookForCustomAttribute(this object o, Type attributeType) {
+      var props = o.GetType().GetProperties();
+      var result = new List<PropertyInfo>();
+      foreach (var prop in props) {
+        foreach (var att in prop.CustomAttributes) {
+          if (att.AttributeType == attributeType) {
+            result.Add(prop);
+          }
+        }
+      }
+      return result;
+    }
 
     public static void CloneFromObject(this object o, object record) {
       var props = o.GetType().GetProperties();
