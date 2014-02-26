@@ -79,7 +79,6 @@ namespace Tests.Postgres {
       var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
       actors.Add(newActor);
       Assert.True(newActor.Actor_ID > 0);
-      
     }
 
   }
