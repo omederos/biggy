@@ -17,7 +17,7 @@ namespace Biggy.SQLServer {
       bool pkIsIdentityColumn = true)
       : base(connectionStringName, tableName, primaryKeyField, pkIsIdentityColumn) { }
 
-    protected override System.Data.Common.DbConnection OpenConnection() {
+    internal override System.Data.Common.DbConnection OpenConnection() {
       var conn = new SqlConnection(this.ConnectionString);
       conn.Open();
       return conn;

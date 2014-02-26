@@ -19,7 +19,7 @@ namespace Biggy {
       this.Clear();
     }
 
-    public void Update(T item) {
+    public virtual void Update(T item) {
       var index = _items.IndexOf(item);
       if (index > -1) {
         _items.RemoveAt(index);
@@ -28,14 +28,14 @@ namespace Biggy {
       FireChangedEvents();
     }
 
-    public void Add(T item) {
+    public virtual void Add(T item) {
       _items.Add(item);
 
       FireInsertedEvents(item);
       FireChangedEvents();
     }
-      
-    public void Clear() {
+
+    public virtual void Clear() {
       _items.Clear();
       FireChangedEvents();
     }
@@ -56,7 +56,7 @@ namespace Biggy {
       get { return false; }
     }
 
-    public bool Remove(T item) {
+    public virtual bool Remove(T item) {
       var removed =  _items.Remove(item);
       FireRemovedEvents(item);
       FireChangedEvents();

@@ -13,4 +13,7 @@ namespace Biggy {
     }
 
   }
+  public class PrimaryKeyAttribute : Attribute {
+
+  }
 }

@@ -59,13 +59,38 @@ namespace Biggy.Tasks {
     }
   }
 
+  class Monkey {
+    [PrimaryKey]
+    public string Name { get; set; }
+    public DateTime Birthday { get; set; }
+
+  }
+
   class Program {
     static void Main(string[] args) {
 
       //RunBenchmarks();
-      TalkToPG();
+      //TalkToPG();
+      TalkToPGDocs();
       Console.Read();
 
+    }
+
+    static void TalkToPGDocs() {
+      var monkies = new PGDocumentList<Monkey>("northwindPG");
+      monkies.Clear();
+      monkies.Add(new Monkey { Name = "CHUCKLES", Birthday = DateTime.Today });
+      var m = monkies.First();
+      Console.WriteLine(m.Name);
+      m.Birthday = DateTime.Today.AddDays(12);
+      Console.WriteLine("Updated : {0}", monkies.Update(m));
+
+      var addRange = new List<Monkey>();
+      for (int i = 0; i < 1000; i++) {
+        addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today });
+      }
+      var inserted = monkies.AddRange(addRange);
+      Console.WriteLine("Just inserted {0} as documents", inserted);
     }
 
     static void TalkToPG() {

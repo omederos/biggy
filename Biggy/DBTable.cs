@@ -65,9 +65,16 @@ namespace Biggy
     }
 
     public void SetPrimaryKey(T item, object value) {
-      var pkProp = item.GetType().GetProperties().FirstOrDefault(x => x.Name.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-      var converted = Convert.ChangeType(value, pkProp.PropertyType);
-      pkProp.SetValue(item, converted);
+      var props = item.GetType().GetProperties();
+      if (item is ExpandoObject) {
+        var d = item as IDictionary<string, object>;
+        d[PrimaryKeyField] = value;
+      } else {
+        var pkProp = props.FirstOrDefault(x => x.Name.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+        var converted = Convert.ChangeType(value, pkProp.PropertyType);
+        pkProp.SetValue(item, converted);
+
+      }
     }
 
     public virtual string PrimaryKeyField { get; set; }
@@ -125,7 +132,7 @@ namespace Biggy
     /// <summary>
     /// Returns and OpenConnection
     /// </summary>
-    protected abstract DbConnection OpenConnection();
+    internal abstract DbConnection OpenConnection();
 
     /// <summary>
     /// Builds a set of Insert and Update commands based on the passed-on objects.
@@ -253,7 +260,7 @@ namespace Biggy
       return result;
     }
 
-    List<DbCommand> CreateInsertBatchCommands<T>(List<T> newRecords) {
+    internal List<DbCommand> CreateInsertBatchCommands<T>(List<T> newRecords) {
       // The magic SQL Server Parameter Limit:
       var MAGIC_PARAMETER_LIMIT = 2100;
       var MAGIC_ROW_VALUE_LIMIT = 1000;

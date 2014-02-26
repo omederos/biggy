@@ -24,7 +24,7 @@ namespace Biggy.Postgres {
       : base(connectionStringName, tableName, primaryKeyField, pkIsIdentityColumn) { }
 
 
-    protected override DbConnection OpenConnection() {
+    internal override DbConnection OpenConnection() {
       var result = new NpgsqlConnection(this.ConnectionString);
       result.Open();
       return result;
