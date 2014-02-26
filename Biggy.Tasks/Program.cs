@@ -86,6 +86,8 @@ namespace Biggy.Tasks {
       Console.WriteLine("Found {0}", discontinued.Count());
       Console.WriteLine("Last name is {0}", discontinued.Last().ProductName);
 
+      Console.WriteLine("There are {0} total clowns", products.Count());
+      
       Console.Read();
 
     }

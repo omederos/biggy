@@ -8,7 +8,9 @@ namespace Biggy {
   public class InMemoryList<T> : ICollection<T> where T : new() {
 
     protected List<T> _items = null;
-
+    public InMemoryList() {
+      _items = new List<T>();
+    }
     public event EventHandler ItemRemoved;
     public event EventHandler ItemAdded;
     public event EventHandler Changed;

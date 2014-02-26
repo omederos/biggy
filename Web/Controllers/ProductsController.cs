@@ -15,7 +15,7 @@ namespace Web.Controllers
         {
             
           
-          return View(DB.Products);
+          return View(MvcApplication.StoreDB.Products);
         }
 
         //
@@ -38,7 +38,7 @@ namespace Web.Controllers
         public ActionResult Create(Product product)
         {
             // TODO: Add insert logic here
-            DB.Products.Add(product);
+            MvcApplication.StoreDB.Products.Add(product);
             //DB.Products.Save();
             return RedirectToAction("Index");
 
@@ -48,7 +48,7 @@ namespace Web.Controllers
         // GET: /Products/Edit/5
         public ActionResult Edit(string id)
         {
-          var product = DB.Products.FirstOrDefault(x => x.Sku == id);
+          var product = MvcApplication.StoreDB.Products.FirstOrDefault(x => x.Sku == id);
           return View(product);
         }
 
@@ -58,8 +58,8 @@ namespace Web.Controllers
         public ActionResult Edit(string id, Product p)
         {
             // TODO: Add update logic here
-            var product = DB.Products.FirstOrDefault(x => x.Sku == id);
-            DB.Products.Update(p);
+            var product = MvcApplication.StoreDB.Products.FirstOrDefault(x => x.Sku == id);
+            MvcApplication.StoreDB.Products.Update(p);
             //DB.Products.Save();
             return RedirectToAction("Index");
 
@@ -69,7 +69,7 @@ namespace Web.Controllers
         // GET: /Products/Delete/5
         public ActionResult Delete(string id)
         {
-          var product = DB.Products.FirstOrDefault(x => x.Sku == id);
+          var product = MvcApplication.StoreDB.Products.FirstOrDefault(x => x.Sku == id);
           return View(product);
         }
 
@@ -81,8 +81,8 @@ namespace Web.Controllers
             try
             {
                 // TODO: Add delete logic here
-                var product = DB.Products.FirstOrDefault(x => x.Sku == id);
-                DB.Products.Remove(product);
+                var product = MvcApplication.StoreDB.Products.FirstOrDefault(x => x.Sku == id);
+                MvcApplication.StoreDB.Products.Remove(product);
                 //DB.Products.Save();
                 return RedirectToAction("Index");
             }

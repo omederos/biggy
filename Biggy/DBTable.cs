@@ -481,7 +481,6 @@ namespace Biggy
     }
 
     //Hooks
-    public virtual void Validate(T item) { }
     public virtual void Inserted(T item) { }
     public virtual void Updated(T item) { }
     public virtual void Deleted(T item) { }
