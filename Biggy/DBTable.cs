@@ -184,7 +184,8 @@ namespace Biggy
 
     public IEnumerable<T> All<T>(string where = "", string orderBy = "", int limit = 0, string columns = "*", params object[] args) where T : new() {
       string sql = BuildSelect(where, orderBy, limit);
-      return Query<T>(string.Format(sql, columns, TableName), args);
+      var formatted = string.Format(sql, columns, TableName);
+      return Query<T>(formatted, args);
     }
 
     protected abstract string BuildSelect(string where, string orderBy, int limit);

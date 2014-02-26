@@ -9,62 +9,16 @@ using Biggy.Extensions;
 using Newtonsoft.Json;
 
 namespace Biggy.SQLServer {
-  public class SQLDocumentList<T> : InMemoryList<T> where T : new() {
+  public class SQLDocumentList<T> : DBDocumentList<T> where T : new() {
 
-    public string TableName { get; set; }
-    public SQLServerTable<dynamic> Model { get; set; }
-    public string PrimaryKeyField { get; set; }
-    public Type PrimaryKeyType { get; set; }
-    public string[] FullTextFields { get; set; }
+    public SQLDocumentList(string connectionStringName) : base(connectionStringName) { }
 
-    string BaseName {
-      get {
-        return typeof(T).Name;
-      }
+    internal override string GetBaseName() {
+      return base.GetBaseName().ToLower();
     }
 
-    public SQLDocumentList(string connectionStringName) {
-      DecideTableName();
-      AssureKeyForT();
-      SetFullTextColumns();
-      var pkIsIdentity = this.PrimaryKeyType == typeof(int);
-      this.Model = new SQLServerTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, pkIsIdentity);
-      TryLoadData();
-    }
-
-    void DecideTableName() {
-      //use the type name
-      this.TableName = Inflector.Inflector.Pluralize(BaseName);
-    }
-
-    void SetFullTextColumns() {
-      var foundProps = new T().LookForCustomAttribute(typeof(FullTextAttribute));
-      this.FullTextFields = foundProps.Select(x => x.Name).ToArray();
-    }
-
-    void AssureKeyForT() {
-      var acceptableKeys = new string[]{"ID", this.BaseName + "ID"};
-      var props = typeof(T).GetProperties();
-      var conventionalKey = props.FirstOrDefault(x => x.Name.Equals("id",StringComparison.OrdinalIgnoreCase)) ??
-         props.FirstOrDefault(x => x.Name.Equals(this.BaseName + "ID" ,StringComparison.OrdinalIgnoreCase));
-
-      if (conventionalKey == null) {
-        //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
-        //I think it's because of assembly issues?
-        var foundProp = new T().LookForCustomAttribute(typeof(PrimaryKeyAttribute)).FirstOrDefault();
-        if(foundProp != null){
-          this.PrimaryKeyField = foundProp.Name;
-          this.PrimaryKeyType = foundProp.PropertyType;
-        }
-      } else {
-        this.PrimaryKeyType = typeof(int);
-        
-      }
-
-      if (String.IsNullOrWhiteSpace(this.PrimaryKeyField)) {
-        throw new InvalidOperationException("Can't tell what the primary key is. You can use ID, " + BaseName + "ID, or specify with the PrimaryKey attribute");
-      }
-
+    public override void SetModel() {
+      this.Model = new SQLServerTable<dynamic>(this.ConnectionStringName,tableName:this.TableName,primaryKeyField:this.PrimaryKeyField, pkIsIdentityColumn: this.PKIsIdentity);
     }
 
     /// <summary>
@@ -75,7 +29,7 @@ namespace Biggy.SQLServer {
       base.Clear();
     }
 
-    void TryLoadData() {
+    internal override void TryLoadData() {
       try {
         this.Reload();
       } catch (System.Data.SqlClient.SqlException x) {
@@ -95,14 +49,6 @@ namespace Biggy.SQLServer {
         }
       }
     }
-
-    /// <summary>
-    /// Reloads the internal memory list
-    /// </summary>
-    public void Reload() {
-      _items = this.Model.All<T>().ToList();
-    }
-
     /// <summary>
     /// Adds a single T item to the database
     /// </summary>
@@ -136,7 +82,7 @@ namespace Biggy.SQLServer {
     /// <summary>
     /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
     /// </summary>
-    public int AddRange(List<T> items) {
+    public override int AddRange(List<T> items) {
       //HACK: Refactor this to be prettier and also use a Transaction
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
 
@@ -210,28 +156,6 @@ namespace Biggy.SQLServer {
     }
 
 
-    ExpandoObject SetDataForDocument(T item) {
-      var json = JsonConvert.SerializeObject(item);
-      var key = this.Model.GetPrimaryKey(item);
-      var expando = new ExpandoObject();
-      var dict = expando as IDictionary<string, object>;
-      
-      dict[PrimaryKeyField] = key;
-      dict["body"] = json;
-
-      if (this.FullTextFields.Length > 0) {
-        //get the data from the item passed in
-        var itemdc = item.ToDictionary();
-        var vals = new List<string>();
-        foreach (var ft in this.FullTextFields) {
-          var val = itemdc[ft] == null ? "" : itemdc[ft].ToString();
-          vals.Add(val);
-        }
-        dict["search"] = string.Join(",", vals);
-      }
-      return expando;
-    }
-
     /// <summary>
     /// Updates a single T item
     /// </summary>
@@ -258,13 +182,5 @@ namespace Biggy.SQLServer {
       return this.Model.Update(expando);
     }
 
-    /// <summary>
-    /// Removes a document from the database
-    /// </summary>
-    public override bool Remove(T item) {
-      var key = this.Model.GetPrimaryKey(item);
-      this.Model.Delete(key);
-      return base.Remove(item);
-    }
   }
 }

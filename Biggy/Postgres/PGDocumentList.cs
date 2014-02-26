@@ -16,72 +16,18 @@ namespace Biggy.Postgres {
   /// A Document Store using Postgres' json data type. Has FullText support as well.
   /// </summary>
   /// <typeparam name="T"></typeparam>
-  public class PGDocumentList<T> : InMemoryList<T> where T : new(){
+  public class PGDocumentList<T> : DBDocumentList<T> where T : new(){
 
-    public string TableName { get; set; }
-    public PGTable<dynamic> Model { get; set; }
-    public string PrimaryKeyField { get; set; }
-    public Type PrimaryKeyType { get; set; }
-    public string[] FullTextFields { get; set; }
-    string BaseName {
-      get {
-        return typeof(T).Name.ToLower();
-      }
+    public PGDocumentList(string connectionStringName) : base(connectionStringName) { }
+
+    internal override string GetBaseName() {
+      return base.GetBaseName().ToLower();
     }
 
-    public PGDocumentList(string connectionStringName) {
-      DecideTableName();
-      AssureKeyForT();
-      SetFullTextColumns();
-      var pkIsIdentity = this.PrimaryKeyType == typeof(int);
-      this.Model = new PGTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, pkIsIdentity);
-      TryLoadData();
+    public override void SetModel() {
+      this.Model = new PGTable<dynamic>(this.ConnectionStringName,tableName:this.TableName,primaryKeyField:this.PrimaryKeyField, pkIsIdentityColumn: this.PKIsIdentity);
     }
-
-    void DecideTableName() {
-      //use the type name
-      this.TableName = Inflector.Inflector.Pluralize(BaseName).ToLower();
-    }
-
-    void SetFullTextColumns() {
-      var foundProps = new T().LookForCustomAttribute(typeof(FullTextAttribute));
-      this.FullTextFields = foundProps.Select(x => x.Name).ToArray();
-    }
-
-    void AssureKeyForT() {
-      var acceptableKeys = new string[]{"ID", this.BaseName + "ID"};
-      var props = typeof(T).GetProperties();
-      var conventionalKey = props.FirstOrDefault(x => x.Name.Equals("id",StringComparison.OrdinalIgnoreCase)) ??
-         props.FirstOrDefault(x => x.Name.Equals(this.BaseName + "ID" ,StringComparison.OrdinalIgnoreCase));
-
-      if (conventionalKey == null) {
-        //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
-        //I think it's because of assembly issues?
-        var foundProp = new T().LookForCustomAttribute(typeof(PrimaryKeyAttribute)).FirstOrDefault();
-        if(foundProp != null){
-          this.PrimaryKeyField = foundProp.Name;
-          this.PrimaryKeyType = foundProp.PropertyType;
-        }
-      } else {
-        this.PrimaryKeyType = typeof(int);
-        
-      }
-
-      if (String.IsNullOrWhiteSpace(this.PrimaryKeyField)) {
-        throw new InvalidOperationException("Can't tell what the primary key is. You can use ID, " + BaseName + "ID, or specify with the PrimaryKey attribute");
-      }
-
-    }
-
-    /// <summary>
-    /// Drops all data from the table - BEWARE
-    /// </summary>
-    public override void Clear() {
-      this.Model.Execute("DELETE FROM " + TableName);
-      base.Clear();
-    }
-
-    void TryLoadData() {
+    internal override void TryLoadData() {
       try {
         this.Reload();
       } catch (Npgsql.NpgsqlException x) {
@@ -103,18 +49,11 @@ namespace Biggy.Postgres {
     }
 
     /// <summary>
-    /// Reloads the internal memory list
-    /// </summary>
-    public void Reload() {
-      _items = this.Model.All<T>().ToList();
-    }
-
-    /// <summary>
     /// Adds a single T item to the database
     /// </summary>
     /// <param name="item"></param>
     public override void Add(T item) {
-      var expando = SetDataForDocument(item);
+      var expando = base.SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
       var vals = new List<string>();
       var args = new List<object>();
@@ -146,7 +85,7 @@ namespace Biggy.Postgres {
     /// <summary>
     /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
     /// </summary>
-    public int AddRange(List<T> items) {
+    public override int AddRange(List<T> items) {
       //HACK: Refactor this to be prettier and also use a Transaction
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
 
@@ -224,28 +163,6 @@ namespace Biggy.Postgres {
     }
 
 
-    ExpandoObject SetDataForDocument(T item) {
-      var json = JsonConvert.SerializeObject(item);
-      var key = this.Model.GetPrimaryKey(item);
-      var expando = new ExpandoObject();
-      var dict = expando as IDictionary<string, object>;
-      
-      dict[PrimaryKeyField] = key;
-      dict["body"] = json;
-
-      if (this.FullTextFields.Length > 0) {
-        //get the data from the item passed in
-        var itemdc = item.ToDictionary();
-        var vals = new List<string>();
-        foreach (var ft in this.FullTextFields) {
-          var val = itemdc[ft] == null ? "" : itemdc[ft].ToString();
-          vals.Add(val);
-        }
-        dict["search"] = string.Join(",", vals);
-      }
-      return expando;
-    }
-
     /// <summary>
     /// Updates a single T item
     /// </summary>
@@ -275,13 +192,5 @@ namespace Biggy.Postgres {
       return this.Model.Update(expando);
     }
 
-    /// <summary>
-    /// Removes a document from the database
-    /// </summary>
-    public override bool Remove(T item) {
-      var key = this.Model.GetPrimaryKey(item);
-      this.Model.Delete(key);
-      return base.Remove(item);
-    }
   }
 }
