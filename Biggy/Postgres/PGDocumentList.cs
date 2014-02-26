@@ -182,6 +182,7 @@ namespace Biggy.Postgres {
       foreach (var cmd in commands) {
         rowsAffected += Model.Execute(cmd);
       }
+      this.Reload();
       return rowsAffected;
     }
 
