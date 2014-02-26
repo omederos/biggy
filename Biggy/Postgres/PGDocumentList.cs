@@ -12,6 +12,10 @@ using System.Collections.Specialized;
 
 namespace Biggy.Postgres {
 
+  /// <summary>
+  /// A Document Store using Postgres' json data type. Has FullText support as well.
+  /// </summary>
+  /// <typeparam name="T"></typeparam>
   public class PGDocumentList<T> : InMemoryList<T> where T : new(){
 
     public string TableName { get; set; }
@@ -69,7 +73,9 @@ namespace Biggy.Postgres {
 
     }
 
-
+    /// <summary>
+    /// Drops all data from the table - BEWARE
+    /// </summary>
     public override void Clear() {
       this.Model.Execute("DELETE FROM " + TableName);
       base.Clear();
@@ -95,15 +101,21 @@ namespace Biggy.Postgres {
         }
       }
     }
+
+    /// <summary>
+    /// Reloads the internal memory list
+    /// </summary>
     public void Reload() {
       _items = this.Model.All<T>().ToList();
-
     }
 
+    /// <summary>
+    /// Adds a single T item to the database
+    /// </summary>
+    /// <param name="item"></param>
     public override void Add(T item) {
       var expando = SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
-      //this.Model.Insert(expando);
       var vals = new List<string>();
       var args = new List<object>();
       var index = 0;
@@ -131,11 +143,11 @@ namespace Biggy.Postgres {
       base.Add(item);
     }
 
-    // This performs a little better, but still needs to be optimized somewhere. 
-    // Currently does 1000 records in ~ 100 ms, 10,000 in about 5,500 ms. 
-    // Protect your eyes. This here be some ugly code for the moment. 
-    //HACK: Refactor this to be prettier and also use a Transaction
+    /// <summary>
+    /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
+    /// </summary>
     public int AddRange(List<T> items) {
+      //HACK: Refactor this to be prettier and also use a Transaction
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
 
       // ?? Unknown. Set this arbitrarily for now, haven't run into a limit yet. 
@@ -176,7 +188,6 @@ namespace Biggy.Postgres {
           //don't update the Primary Key
           itemSchema.Remove(keyColumn);
         }
-
 
         foreach (var key in itemSchema.Keys) {
           // Things explode if you exceed the param limit for pg:
@@ -235,7 +246,9 @@ namespace Biggy.Postgres {
       return expando;
     }
 
-
+    /// <summary>
+    /// Updates a single T item
+    /// </summary>
     public override int Update(T item) {
       var expando = SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
@@ -262,6 +275,9 @@ namespace Biggy.Postgres {
       return this.Model.Update(expando);
     }
 
+    /// <summary>
+    /// Removes a document from the database
+    /// </summary>
     public override bool Remove(T item) {
       var key = this.Model.GetPrimaryKey(item);
       this.Model.Delete(key);
