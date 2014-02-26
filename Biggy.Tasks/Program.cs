@@ -90,7 +90,7 @@ namespace Biggy.Tasks {
       var sw = new Stopwatch();
       sw.Start();
       var addRange = new List<Monkey>();
-      for (int i = 0; i < 1000; i++) {
+      for (int i = 0; i < 10000; i++) {
         addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today, Description = "The Monkey on my back" });
       }
       var inserted = monkies.AddRange(addRange);
