@@ -6,3 +6,7 @@ $MsBuildDir = (Get-ItemProperty -ea:SilentlyContinue ("HKLM:\Software\Microsoft\
 $msbuild = Join-Path $MsBuildDir msbuild.exe
 
 . $msbuild "$currentDir\Biggy.sln" /target:Rebuild /property:Configuration=Release
+
+$nuget = Join-Path $currentDir tools\nuget.exe
+
+. $nuget pack "$currentDir\Biggy.nuspec"
