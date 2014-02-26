@@ -127,10 +127,10 @@ namespace Biggy.Postgres {
     // Currently does 1000 records in ~ 100 ms, 10,000 in about 5,500 ms. 
     // Protect your eyes. This here be some ugly code for the moment. 
     public int AddRange(List<T> items) {
-      const int MAGIC_PG_PARAMETER_LIMIT = 34464;
+      const int MAGIC_PG_PARAMETER_LIMIT = 2100;
 
       // ?? Unknown. Set this arbitrarily for now, haven't run into a limit yet. 
-      const int MAGIC_PG_ROW_VALUE_LIMIT = 10000; 
+      const int MAGIC_PG_ROW_VALUE_LIMIT = 1000; 
 
       string stub = "INSERT INTO {0} ({1}) VALUES ";
       var first = items.First();
@@ -143,7 +143,10 @@ namespace Biggy.Postgres {
       var paramCounter = 0;
       var rowValueCounter = 0;
       var commands = new List<DbCommand>();
-      DbCommand dbCommand = Model.CreateCommand("", null);
+      var conn = Model.OpenConnection();
+
+      // Use the SAME connection, don't hit the pool for each command. 
+      DbCommand dbCommand = Model.CreateCommand("", conn);
 
       foreach (var item in items) {
         var itemEx = SetDataForDocument(item);
@@ -158,7 +161,7 @@ namespace Biggy.Postgres {
             sbSql = new StringBuilder(insertClause);
             paramCounter = 0;
             rowValueCounter = 0;
-            dbCommand = Model.CreateCommand("", null);
+            dbCommand = Model.CreateCommand("", conn);
           }
           if (key == "search") {
             sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
