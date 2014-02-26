@@ -3,24 +3,26 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Biggy.Postgres;
-using Xunit;
 using Biggy;
+using Biggy.SQLServer;
+using Xunit;
 
-namespace Tests.Postgres {
+namespace Tests.SQLServer {
 
-  [Trait("PG Documents","")]
-  public class PGDocs {
+  [Trait("SQL Server Document Store","")]
+  public class SQLServerDocs {
 
-    PGDocumentList<CustomerDocument> docs;
-    public PGDocs() {
-      docs = new PGDocumentList<CustomerDocument>("dvds");
+
+    SQLDocumentList<CustomerDocument> docs;
+    public SQLServerDocs() {
+      docs = new SQLDocumentList<CustomerDocument>("northwind");
       //drop and reload
       docs.Clear();
     }
 
-    [Fact(DisplayName = "Creates a table if none exists")]
-    public void CreatesTable() {
+
+    [Fact(DisplayName = "Creates a store if one doesn't exist")]
+    public void FactName() {
       Assert.True(docs.Count() == 0);
     }
 
@@ -48,8 +50,7 @@ namespace Tests.Postgres {
       Assert.True(removed);
     }
 
-    class Monkey
-    {
+    class Monkey {
       [PrimaryKey]
       public string Name { get; set; }
       public DateTime Birthday { get; set; }
@@ -58,15 +59,13 @@ namespace Tests.Postgres {
     }
 
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with string key")]
-    static void InsertsManyMonkeys()
-    {
+    static void InsertsManyMonkeys() {
       int INSERT_QTY = 10000;
-      var monkies = new PGDocumentList<Monkey>("northwindPG");
+      var monkies = new SQLDocumentList<Monkey>("northwind");
       monkies.Clear();
 
       var addRange = new List<Monkey>();
-      for (int i = 0; i < INSERT_QTY; i++)
-      {
+      for (int i = 0; i < INSERT_QTY; i++) {
         addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today, Description = "The Monkey on my back" });
       }
       var inserted = monkies.AddRange(addRange);
@@ -75,7 +74,7 @@ namespace Tests.Postgres {
 
     [Fact(DisplayName = "Will create a table with serial PK")]
     public void CreatesSerialPK() {
-      var actors = new PGDocumentList<Actor>("northwindPG");
+      var actors = new SQLDocumentList<Actor>("northwind");
       var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
       actors.Add(newActor);
       Assert.True(newActor.Actor_ID > 0);
@@ -83,7 +82,7 @@ namespace Tests.Postgres {
 
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with integer key")]
     static void InsertsManyActors() {
-      var actors = new PGDocumentList<Actor>("northwindPG");
+      var actors = new SQLDocumentList<Actor>("northwind");
       var bulkList = new List<Actor>();
       for (int i = 0; i < 100; i++) {
         var newActor = new Actor { First_Name = "Actor " + i, Last_Name = "Test" };
@@ -91,8 +90,9 @@ namespace Tests.Postgres {
       }
       actors.AddRange(bulkList);
       Assert.True(actors.Last().Actor_ID > 90);
-      
+
     }
+
 
   }
 }

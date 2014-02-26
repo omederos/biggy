@@ -1,46 +1,40 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Biggy.Extensions;
-using System.Data.Common;
-using System.Collections.Specialized;
+using Newtonsoft.Json;
 
-
-namespace Biggy.Postgres {
-
-  /// <summary>
-  /// A Document Store using Postgres' json data type. Has FullText support as well.
-  /// </summary>
-  /// <typeparam name="T"></typeparam>
-  public class PGDocumentList<T> : InMemoryList<T> where T : new(){
+namespace Biggy.SQLServer {
+  public class SQLDocumentList<T> : InMemoryList<T> where T : new() {
 
     public string TableName { get; set; }
-    public PGTable<dynamic> Model { get; set; }
+    public SQLServerTable<dynamic> Model { get; set; }
     public string PrimaryKeyField { get; set; }
     public Type PrimaryKeyType { get; set; }
     public string[] FullTextFields { get; set; }
+
     string BaseName {
       get {
-        return typeof(T).Name.ToLower();
+        return typeof(T).Name;
       }
     }
 
-    public PGDocumentList(string connectionStringName) {
+    public SQLDocumentList(string connectionStringName) {
       DecideTableName();
       AssureKeyForT();
       SetFullTextColumns();
       var pkIsIdentity = this.PrimaryKeyType == typeof(int);
-      this.Model = new PGTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, pkIsIdentity);
+      this.Model = new SQLServerTable<dynamic>(connectionStringName, this.TableName, this.PrimaryKeyField, pkIsIdentity);
       TryLoadData();
     }
 
     void DecideTableName() {
       //use the type name
-      this.TableName = Inflector.Inflector.Pluralize(BaseName).ToLower();
+      this.TableName = Inflector.Inflector.Pluralize(BaseName);
     }
 
     void SetFullTextColumns() {
@@ -84,16 +78,16 @@ namespace Biggy.Postgres {
     void TryLoadData() {
       try {
         this.Reload();
-      } catch (Npgsql.NpgsqlException x) {
-        if (x.Message.Contains("does not exist")) {
+      } catch (System.Data.SqlClient.SqlException x) {
+        if (x.Message.Contains("Invalid object name")) {
 
           //create the table
-          var idType = this.PrimaryKeyType == typeof(int) ? " serial" : "varchar(255)";
+          var idType = this.PrimaryKeyType == typeof(int) ? " int identity(1,1)" : "nvarchar(255)";
           string fullTextColumn = "";
           if (this.FullTextFields.Length > 0) {
-            fullTextColumn = ", search tsvector";
+            fullTextColumn = ", search nvarchar(MAX)";
           }
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
           this.Model.Execute(sql);
           TryLoadData();
         } else {
@@ -126,16 +120,12 @@ namespace Biggy.Postgres {
         dc.Remove(keyColumn);
       }
       foreach (var key in dc.Keys) {
-        if (key == "search") {
-          vals.Add(string.Format("to_tsvector(@{0})", index));
-        } else {
-          vals.Add(string.Format("@{0}", index));
-        }
+        vals.Add(string.Format("@{0}", index));
         args.Add(dc[key]);
         index++;
       }
       var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}); SELECT SCOPE_IDENTITY() as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals));
       var sql = sb.ToString(); 
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key
@@ -200,11 +190,7 @@ namespace Biggy.Postgres {
             rowValueCounter = 0;
             dbCommand = Model.CreateCommand("", conn);
           }
-          if (key == "search") {
-            sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
-          } else {
-            sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
-          }
+          sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
           dbCommand.AddParam(itemSchema[key]);
           paramCounter++;
         }
@@ -259,9 +245,6 @@ namespace Biggy.Postgres {
       sb.AppendFormat("UPDATE {0} SET ", this.TableName);
       foreach (var key in dc.Keys) {
         var stub = string.Format("{0}=@{1},", key, index);
-        if (key == "search") {
-          stub = string.Format("{0}=to_tsvector(@{1}),", key, index);
-        }
         args.Add(dc[key]);
         index++;
         if (index == dc.Keys.Count)

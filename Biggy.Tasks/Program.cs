@@ -64,7 +64,7 @@ namespace Biggy.Tasks {
     [PrimaryKey]
     public string Name { get; set; }
     public DateTime Birthday { get; set; }
-    [PGFullText]
+    [FullText]
     public string Description { get; set; }
   }
 

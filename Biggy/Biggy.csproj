@@ -66,6 +66,7 @@
     <Compile Include="Postgres\PGList.cs" />
     <Compile Include="Postgres\PGTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SQLServer\SQLDocumentList.cs" />
     <Compile Include="SQLServer\SQLServerList.cs" />
     <Compile Include="SQLServer\SQLServerTable.cs" />
   </ItemGroup>

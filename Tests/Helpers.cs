@@ -15,7 +15,7 @@ namespace Tests {
     public DateTime ReleaseYear { get; set; }
     public int Length { get; set; }
 
-    [PGFullText]
+    [FullText]
     public string FullText { get; set; }
   }
 

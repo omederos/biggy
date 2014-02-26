@@ -71,7 +71,7 @@ namespace Biggy.Postgres {
       //I think it's because of assembly issues?
       foreach (var prop in props) {
         foreach (var att in prop.CustomAttributes) {
-          if(att.AttributeType == typeof(PGFullTextAttribute)){
+          if(att.AttributeType == typeof(FullTextAttribute)){
             columnName = prop.Name;
             break;
           }

@@ -47,10 +47,11 @@
     <Compile Include="Postgres\FullText.cs" />
     <Compile Include="Postgres\ListCRUD.cs" />
     <Compile Include="Postgres\PGDocs.cs" />
-    <Compile Include="SQLServer\Massive.cs" />
-    <Compile Include="SQLServer\MassiveList.cs" />
-    <Compile Include="SQLServer\MassiveSetup.cs" />
+    <Compile Include="SQLServer\SQLServerTable.cs" />
+    <Compile Include="SQLServer\SQLServerList.cs" />
+    <Compile Include="SQLServer\SQLServerSetup.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SQLServer\SQLServerDocs.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

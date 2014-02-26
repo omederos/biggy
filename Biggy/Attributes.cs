@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Biggy {
-  public class PGFullTextAttribute : Attribute {
+  public class FullTextAttribute : Attribute {
 
   }
   public class PrimaryKeyAttribute : Attribute {
