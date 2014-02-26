@@ -55,11 +55,14 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="BiggyEventArgs.cs" />
+    <Compile Include="DBList.cs" />
+    <Compile Include="InMemoryList.cs" />
     <Compile Include="JSON\BiggyList.cs" />
     <Compile Include="JSON\BiggyDB.cs" />
     <Compile Include="Extensions\JsonExtensions.cs" />
     <Compile Include="Extensions\ObjectExtensions.cs" />
     <Compile Include="DBTable.cs" />
+    <Compile Include="Postgres\PGDocumentList.cs" />
     <Compile Include="Postgres\PGList.cs" />
     <Compile Include="Postgres\PGTable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
