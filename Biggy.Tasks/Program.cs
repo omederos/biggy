@@ -73,7 +73,19 @@ namespace Biggy.Tasks {
 
       //RunBenchmarks();
       //TalkToPG();
-      TalkToPGDocs();
+      //TalkToPGDocs();
+
+      var products = new SQLServerTable<NWProduct>("northwind", "products", "productid", true);
+      var first = products.FirstOrDefault<NWProduct>("productid=@0", 3);
+
+      var discontinued = products.Query("SELECT productId, ProductName FROM products where discontinued = 1");
+      Console.WriteLine("Found {0}", discontinued.Count());
+      Console.WriteLine("Last name is {0}", discontinued.Last().ProductName);
+
+      discontinued = products.Where("discontinued=@0", 1);
+      Console.WriteLine("Found {0}", discontinued.Count());
+      Console.WriteLine("Last name is {0}", discontinued.Last().ProductName);
+
       Console.Read();
 
     }

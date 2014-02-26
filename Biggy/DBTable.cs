@@ -83,6 +83,24 @@ namespace Biggy
     public string DescriptorField { get; protected set; }
 
 
+    public IEnumerable<T> Where(string where, params object[] args) {
+      var sql = BuildSelect(where, "", -1);
+      var formatted = string.Format(sql, "*", this.TableName);
+      return Query<T>(formatted, args);
+    }
+
+    /// <summary>
+    /// Enumerates the reader yielding the result - thanks to Jeroen Haegebaert
+    /// </summary>
+    public IEnumerable<dynamic> Query(string sql, params object[] args) {
+      using (var conn = OpenConnection()) {
+        var rdr = CreateCommand(sql, conn, args).ExecuteReader();
+        while (rdr.Read()) {
+          var expando = rdr.RecordToExpando();
+          yield return expando;
+        }
+      }
+    }
 
     /// <summary>
     /// Enumerates the reader yielding the result - thanks to Jeroen Haegebaert
@@ -188,7 +206,8 @@ namespace Biggy
       return Query<T>(formatted, args);
     }
 
-    protected abstract string BuildSelect(string where, string orderBy, int limit);
+    protected abstract string BuildSelect(string where, string orderBy="", int limit=0);
+
     protected abstract string GetSingleSelect(string where);
     /// <summary>
     /// Returns a single row from the database
