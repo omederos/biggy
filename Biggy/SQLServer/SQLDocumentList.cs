@@ -123,6 +123,7 @@ namespace Biggy.SQLServer {
         var itemEx = SetDataForDocument(item);
         var itemSchema = itemEx as IDictionary<string, object>;
         var sbParamGroup = new StringBuilder();
+        keyColumn = itemSchema.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
 
         if (this.Model.PkIsIdentityColumn) {
           //don't update the Primary Key

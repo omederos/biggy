@@ -60,7 +60,7 @@ namespace Biggy {
         }
       } else {
         this.PrimaryKeyType = typeof(int);
-        
+        this.PrimaryKeyField = conventionalKey.Name;
       }
       this.PKIsIdentity = this.PrimaryKeyType == typeof(int);
       if (String.IsNullOrWhiteSpace(this.PrimaryKeyField)) {
@@ -83,7 +83,16 @@ namespace Biggy {
     /// Reloads the internal memory list
     /// </summary>
     public void Reload() {
-      _items = this.Model.All<T>().ToList();
+      var results = this.Model.Query("select body from " + this.TableName);//this.Model.All<T>().ToList();
+      //our results are all dynamic - but all we care about is the body
+      var sb = new StringBuilder();
+      foreach (var item in results) {
+        sb.AppendFormat("{0},",item.body);
+      }
+      var scrunched = sb.ToString();
+      var stripped = scrunched.Substring(0, scrunched.Length - 1);
+      var json = string.Format("[{0}]", stripped);
+      _items = JsonConvert.DeserializeObject<List<T>>(json);
     }
 
     /// <summary>

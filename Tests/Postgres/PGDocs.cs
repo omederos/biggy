@@ -40,6 +40,19 @@ namespace Tests.Postgres {
       Assert.Equal(1, updated);
     }
 
+    [Fact(DisplayName = "All records are populated correctly")]
+    public void RecordsPopulated() {
+      docs.Clear();
+      var newCustomer = new CustomerDocument { Email = "buddy@tekpub.com", First = "Buddy", Last = "Conery" };
+      docs.Add(newCustomer);
+
+      //load a new, separate list
+      var customers = new PGDocumentList<CustomerDocument>("dvds");
+      //there should be some records here based on the above
+      Assert.Equal("buddy@tekpub.com", customers.First().Email);
+      Assert.Equal("Buddy", customers.First().First);
+      Assert.Equal("Conery", customers.First().Last);
+    }
     [Fact(DisplayName = "Deletes a document")]
     public void DeletesDocument() {
       var newCustomer = new CustomerDocument { Email = "rob@tekpub.com", First = "Rob", Last = "Conery" };

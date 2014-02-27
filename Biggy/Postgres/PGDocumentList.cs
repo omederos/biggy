@@ -105,7 +105,6 @@ namespace Biggy.Postgres {
         schema.Remove(keyColumn);
       }
 
-
       var insertClause = string.Format(stub, this.TableName, string.Join(", ", schema.Keys));
       var sbSql = new StringBuilder(insertClause);
 
@@ -122,6 +121,7 @@ namespace Biggy.Postgres {
         var itemEx = SetDataForDocument(item);
         var itemSchema = itemEx as IDictionary<string, object>;
         var sbParamGroup = new StringBuilder();
+        keyColumn = itemSchema.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
 
         if (this.Model.PkIsIdentityColumn) {
           //don't update the Primary Key
