@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Biggy.SQLServer;
 using System.Diagnostics;
 
-namespace Biggy.Tasks
+namespace Biggy.Perf
 {
     public class Transaction
     {

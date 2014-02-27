@@ -55,6 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="DbScripts\CreateSqlServer.bat" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -70,6 +71,8 @@
     <Folder Include="JSON\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="DbScripts\Chinook_SqlServer.sql" />
+    <Content Include="DbScripts\Chinook_SqlServer_AutoIncrementPKs.sql" />
     <Content Include="DbScripts\dvdrental_postgres.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

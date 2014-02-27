@@ -108,7 +108,9 @@ namespace Biggy.Extensions {
         for (int i = 0; i < rdr.FieldCount; i++) {
           if (rdr.GetName(i).Equals(prop.Name, StringComparison.InvariantCultureIgnoreCase)) {
             var val = rdr.GetValue(i);
-            prop.SetValue(item, val);
+            if (val.GetType() != typeof(DBNull)) {
+              prop.SetValue(item, val);
+            }
           }
         }
       }

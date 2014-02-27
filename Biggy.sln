@@ -5,7 +5,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biggy", "Biggy\Biggy.csproj", "{49DBD996-032D-4B58-B35A-2621DA0EAEAF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biggy.Tasks", "Biggy.Tasks\Biggy.Tasks.csproj", "{865CB04C-63E2-4042-A2B8-8D81FD39DF6A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Biggy.Perf", "Biggy.Tasks\Biggy.Perf.csproj", "{865CB04C-63E2-4042-A2B8-8D81FD39DF6A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Web", "Web\Web.csproj", "{59BD70C9-777C-4B9C-AB17-4F6890387733}"
 EndProject
