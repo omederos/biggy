@@ -21,11 +21,11 @@ class Clown {
   public DateTime Birthday {get;set;}
   
   public Clown(){
-    Birthday = DateTime.Today();
+    Birthday = DateTime.Today;
   }
 }
 var clowns = new PGDocumentList<Clown>(connectionStringName : "Northwind");
-var newClown = new Clown{Name : "Dougy Buns", Birthday = DateTime.Today().AddDays(-100), LifeStory = "Once upon a time, I was a little clown"};
+var newClown = new Clown{Name : "Dougy Buns", Birthday = DateTime.Today.AddDays(-100), LifeStory = "Once upon a time, I was a little clown"};
 clowns.Add(newClown);
 
 ```
