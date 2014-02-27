@@ -14,7 +14,7 @@ namespace Biggy.SQLServer {
     public SQLDocumentList(string connectionStringName) : base(connectionStringName) { }
 
     internal override string GetBaseName() {
-      return base.GetBaseName().ToLower();
+      return base.GetBaseName();
     }
 
     public override void SetModel() {
@@ -43,6 +43,10 @@ namespace Biggy.SQLServer {
           }
           var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
           this.Model.Execute(sql);
+          //if (this.FullTextFields.Length > 0) {
+          //  var indexSQL = string.Format("CREATE FULL TEXT INDEX ON {0}({1})",this.TableName,string.Join(",",this.FullTextFields));
+          //  this.Model.Execute(indexSQL);
+          //}
           TryLoadData();
         } else {
           throw;

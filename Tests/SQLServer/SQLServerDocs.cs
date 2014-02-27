@@ -93,6 +93,12 @@ namespace Tests.SQLServer {
 
     }
 
-
+    //[Fact(DisplayName = "Creates a FullText document table")]
+    //public void FullTextDocument() {
+    //  var films = new SQLDocumentList<Film>("northwind");
+    //  var film = new Film { Description = "Lorem ipsum", FullText = "Search on this marigold", Length = 100, ReleaseYear = DateTime.Today, Title = "Test Title" };
+    //  films.Add(film);
+    //  Assert.True(film.Film_ID > 0);
+    //}
   }
 }

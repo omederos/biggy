@@ -9,6 +9,7 @@ namespace Tests {
 
 
   public class Film {
+    [PrimaryKey]
     public int Film_ID { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }

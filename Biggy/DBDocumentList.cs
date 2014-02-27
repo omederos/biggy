@@ -35,7 +35,7 @@ namespace Biggy {
     void DecideTableName() {
       //use the type name
       var baseName = this.GetBaseName();
-      this.TableName = Inflector.Inflector.Pluralize(baseName).ToLower();
+      this.TableName = Inflector.Inflector.Pluralize(baseName);
     }
 
     void SetFullTextColumns() {
