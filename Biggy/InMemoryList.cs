@@ -78,7 +78,7 @@ namespace Biggy {
       if (this.Changed != null) {
         var args = new BiggyEventArgs<T>();
         args.Items = _items;
-        this.ItemRemoved.Invoke(this, args);
+        this.Changed.Invoke(this, args);
       }
     }
 
