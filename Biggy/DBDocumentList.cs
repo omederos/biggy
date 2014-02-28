@@ -89,10 +89,14 @@ namespace Biggy {
       foreach (var item in results) {
         sb.AppendFormat("{0},",item.body);
       }
-      var scrunched = sb.ToString();
-      var stripped = scrunched.Substring(0, scrunched.Length - 1);
-      var json = string.Format("[{0}]", stripped);
-      _items = JsonConvert.DeserializeObject<List<T>>(json);
+      // Can't take a substring of a zero-length string:
+      if(sb.Length > 0)
+      {
+        var scrunched = sb.ToString();
+        var stripped = scrunched.Substring(0, scrunched.Length - 1);
+        var json = string.Format("[{0}]", stripped);
+        _items = JsonConvert.DeserializeObject<List<T>>(json);
+      }
     }
 
     /// <summary>
@@ -126,6 +130,10 @@ namespace Biggy {
           vals.Add(val);
         }
         dict["search"] = string.Join(",", vals);
+      }
+      if(this.PKIsIdentity)
+      {
+        dict.Remove(this.PrimaryKeyField);
       }
       return expando;
     }

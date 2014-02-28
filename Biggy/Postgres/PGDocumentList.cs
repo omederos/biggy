@@ -80,88 +80,112 @@ namespace Biggy.Postgres {
       //set the key
       this.Model.SetPrimaryKey(item, newKey);
       base.Add(item);
+
+      if(PKIsIdentity)
+      {
+        // Sync the JSON ID with the serial PK:
+        var ex = this.SetDataForDocument(item);
+        this.Update(item);
+      }
+    }
+
+    int AddItem(T item)
+    {
+      this.Add(item);
+      var props = item.GetType().GetProperties();
+      var pk = props.First(p => p.Name == this.PrimaryKeyField);
+      return (int)pk.GetValue(item);
     }
 
     /// <summary>
     /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
     /// </summary>
     public override int AddRange(List<T> items) {
-      //HACK: Refactor this to be prettier and also use a Transaction
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
-
-      // ?? Unknown. Set this arbitrarily for now, haven't run into a limit yet. 
-      const int MAGIC_PG_ROW_VALUE_LIMIT = 1000; 
-
-      string stub = "INSERT INTO {0} ({1}) VALUES ";
-      var first = items.First();
-      var expando = this.SetDataForDocument(first);
-      var schema = expando as IDictionary<string, object>;
-
-      var keyColumn = schema.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-      
-      //HACK: I don't like this duplication here and below... we'll refactor at some point :)
-      if (this.Model.PkIsIdentityColumn) {
-        //don't update the Primary Key
-        schema.Remove(keyColumn);
-      }
-
-      var insertClause = string.Format(stub, this.TableName, string.Join(", ", schema.Keys));
-      var sbSql = new StringBuilder(insertClause);
-
-      var paramCounter = 0;
-      var rowValueCounter = 0;
-      var commands = new List<DbCommand>();
-      
-      var conn = Model.OpenConnection();
-
-      // Use the SAME connection, don't hit the pool for each command. 
-      DbCommand dbCommand = Model.CreateCommand("", conn);
-
-      foreach (var item in items) {
-        var itemEx = SetDataForDocument(item);
-        var itemSchema = itemEx as IDictionary<string, object>;
-        var sbParamGroup = new StringBuilder();
-        keyColumn = itemSchema.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-
-        if (this.Model.PkIsIdentityColumn) {
-          //don't update the Primary Key
-          itemSchema.Remove(keyColumn);
-        }
-
-        foreach (var key in itemSchema.Keys) {
-          // Things explode if you exceed the param limit for pg:
-          if (paramCounter + schema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
-            // Add the current command to the list, then start over with another:
-            dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
-            commands.Add(dbCommand);
-            sbSql = new StringBuilder(insertClause);
-            paramCounter = 0;
-            rowValueCounter = 0;
-            dbCommand = Model.CreateCommand("", conn);
-          }
-          if (key == "search") {
-            sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
-          } else {
-            sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
-          }
-          dbCommand.AddParam(itemSchema[key]);
-          paramCounter++;
-        }
-        // Add the row params to the end of the sql:
-        sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
-        rowValueCounter++;
-      }
-      dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
-      commands.Add(dbCommand);
-
+      const int MAGIC_PG_ROW_VALUE_LIMIT = 1000;
       int rowsAffected = 0;
-      foreach (var cmd in commands) {
-        rowsAffected += Model.Execute(cmd);
+
+      var first = items.First();
+
+      // We need to add and remove an item to get the starting serial pk:
+      int nextSerialPk = 0;
+      if (this.PKIsIdentity) {
+        // HACK: But don't see ANY other way to do this:
+        nextSerialPk = this.AddItem(first) + 1;
+
+        // We could leave the inserted and remove from the list, but then the insert is outside the bulk transaction scope:
+        this.Remove(first);
+      }
+      string insertClause = "";
+      var sbSql = new StringBuilder("");
+
+      using (var connection = Model.OpenConnection()) {
+        using (var tdbTransaction = connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead)) {
+          var commands = new List<DbCommand>();
+          // Lock the table, so nothing will disrupt the pk sequence:
+          string lockTableSQL = string.Format("LOCK TABLE {0} in ACCESS EXCLUSIVE MODE", this.TableName);
+          DbCommand dbCommand = Model.CreateCommand(lockTableSQL, connection);
+          dbCommand.Transaction = tdbTransaction;
+          dbCommand.ExecuteNonQuery();
+
+          var paramCounter = 0;
+          var rowValueCounter = 0;
+          foreach (var item in items) {
+            // Set the soon-to-be inserted serial int value:
+            if (this.PKIsIdentity) {
+              var props = item.GetType().GetProperties();
+              var pk = props.First(p => p.Name == this.PrimaryKeyField);
+              pk.SetValue(item, nextSerialPk);
+              nextSerialPk++;
+            }
+            // Set the JSON object, including the interpolated serial PK
+            var itemEx = SetDataForDocument(item);
+            var itemSchema = itemEx as IDictionary<string, object>;
+            var sbParamGroup = new StringBuilder();
+
+            if (item.Equals(first)) {
+              string stub = "INSERT INTO {0} ({1}) VALUES ";
+              insertClause = string.Format(stub, this.TableName, string.Join(", ", itemSchema.Keys));
+              sbSql = new StringBuilder(insertClause);
+            }
+            foreach (var key in itemSchema.Keys) {
+              if (paramCounter + itemSchema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
+                dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+                commands.Add(dbCommand);
+                sbSql = new StringBuilder(insertClause);
+                paramCounter = 0;
+                rowValueCounter = 0;
+                dbCommand = Model.CreateCommand("", connection);
+                dbCommand.Transaction = tdbTransaction;
+              }
+              if (key == "search") {
+                sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
+              } else {
+                sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
+              }
+              dbCommand.AddParam(itemSchema[key]);
+              paramCounter++;
+            }
+            // Add the row params to the end of the sql:
+            sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
+            rowValueCounter++;
+          }
+
+          dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+          commands.Add(dbCommand);
+          try {
+            foreach (var cmd in commands) {
+              rowsAffected += cmd.ExecuteNonQuery();
+            }
+            tdbTransaction.Commit();
+          } catch (Exception) {
+            tdbTransaction.Rollback();
+          }
+        }
       }
       this.Reload();
       return rowsAffected;
     }
-
 
     /// <summary>
     /// Updates a single T item
