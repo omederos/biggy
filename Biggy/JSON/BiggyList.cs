@@ -11,7 +11,6 @@ namespace Biggy.JSON
 
     public class BiggyList<T> :InMemoryList<T> where T: new() {
 
-      List<T> _items = null;
       public string DbDirectory { get; set; }
       public bool InMemory { get; set; }
       public string DbFileName { get; set; }
