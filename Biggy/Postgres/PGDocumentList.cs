@@ -89,16 +89,46 @@ namespace Biggy.Postgres {
       }
     }
 
-    int AddItem(T item)
+    internal int getNextSerialPk(T item)
     {
-      this.Add(item);
+      var expando = base.SetDataForDocument(item);
+      var dc = expando as IDictionary<string, object>;
+      var vals = new List<string>();
+      var args = new List<object>();
+      var index = 0;
+
+      var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+      if (this.Model.PkIsIdentityColumn) {
+        //don't update the Primary Key
+        dc.Remove(keyColumn);
+      }
+      foreach (var key in dc.Keys) {
+        if (key == "search") {
+          vals.Add(string.Format("to_tsvector(@{0})", index));
+        }
+        else {
+          vals.Add(string.Format("@{0}", index));
+        }
+        args.Add(dc[key]);
+        index++;
+      }
+      var sb = new StringBuilder();
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
+      var sql = sb.ToString();
+      var newKey = this.Model.Scalar(sql, args.ToArray());
+      //set the key
+      this.Model.SetPrimaryKey(item, newKey);
+      base.Add(item);
+      this.Remove(item);
+
       var props = item.GetType().GetProperties();
       var pk = props.First(p => p.Name == this.PrimaryKeyField);
-      return (int)pk.GetValue(item);
+      return (int)pk.GetValue(item) + 1;
     }
 
+
     /// <summary>
-    /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
+    /// A high-performance bulk-insert that can drop 10,000 documents in about 900 ms
     /// </summary>
     public override int AddRange(List<T> items) {
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
@@ -110,11 +140,8 @@ namespace Biggy.Postgres {
       // We need to add and remove an item to get the starting serial pk:
       int nextSerialPk = 0;
       if (this.PKIsIdentity) {
-        // HACK: But don't see ANY other way to do this:
-        nextSerialPk = this.AddItem(first) + 1;
-
-        // We could leave the inserted and remove from the list, but then the insert is outside the bulk transaction scope:
-        this.Remove(first);
+        // HACK: This is SO bad, but don't see ANY other way to do this:
+        nextSerialPk = this.getNextSerialPk(first);
       }
       string insertClause = "";
       var sbSql = new StringBuilder("");
@@ -170,7 +197,6 @@ namespace Biggy.Postgres {
             sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
             rowValueCounter++;
           }
-
           dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
           commands.Add(dbCommand);
           try {
