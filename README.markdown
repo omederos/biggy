@@ -277,14 +277,6 @@ Shakespeare takes roughly 5.5MB of storage
 The entire customer, catalog, logging, and sales history of Tekpub was around 6MB. If you're bumping up against your data limit - just move from an in-memory list to a regular table object (as shown above) and you're good to go.
 
 
-## NuGet
-
-Yes, it's on NuGet!
-
-```
-Install-Package Biggy
-```
-
 ## Wanna Help?
 
 Please do! Here's what we ask of you:
