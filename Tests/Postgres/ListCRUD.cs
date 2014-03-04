@@ -42,12 +42,14 @@ namespace Tests.Postgres {
 
     [Fact(DisplayName = "Bulk Inserts")]
     public void BulkInserts() {
+      int INSERT_QTY = 1000;
       var inserts = new List<Actor>();
-      for (int i = 0; i < 1000; i++) {
+      for (int i = 0; i < INSERT_QTY; i++)
+      {
         inserts.Add(new Actor { First_Name = "Actor " + i, Last_Name = "Be Sure To Delete Me" });
       }
       var inserted = actors.AddRange(inserts);
-      Assert.Equal(1000, inserted);
+      Assert.Equal(INSERT_QTY, inserted);
     }
 
     [Fact(DisplayName = "Deletes by range")]

@@ -287,69 +287,6 @@ namespace Biggy
       return result;
     }
 
-    internal List<DbCommand> CreateInsertBatchCommands<T>(List<T> newRecords) {
-      // The magic SQL Server Parameter Limit:
-      var MAGIC_PARAMETER_LIMIT = 2100;
-      var MAGIC_ROW_VALUE_LIMIT = 1000;
-      int paramCounter = 0;
-      int rowValueCounter = 0;
-      var commands = new List<DbCommand>();
-
-      // We need a sample to grab the object schema:
-      var first = newRecords.First().ToExpando();
-      var schema = (IDictionary<string, object>)first;
-
-      // Remove identity column - "can't touch this..."
-      if (PkIsIdentityColumn) {
-        var col = schema.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-        schema.Remove(col);
-      }
-
-      var sbFieldNames = new StringBuilder();
-      foreach (var field in schema) {
-        sbFieldNames.AppendFormat("{0},", field.Key);
-      }
-      var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
-
-      // Get the core of the INSERT statement, then append each set of field params per record:
-      var sqlStub = string.Format("INSERT INTO {0} ({1}) VALUES ", TableName, keys);
-      var sbSql = new StringBuilder(sqlStub);
-      var dbCommand = CreateCommand("", null);
-
-      foreach (var item in newRecords) {
-        // Things explode if you exceed the param limit for SQL Server:
-        if (paramCounter + schema.Count >= MAGIC_PARAMETER_LIMIT || rowValueCounter >= MAGIC_ROW_VALUE_LIMIT) {
-          // Add the current command to the list, then start over with another:
-          dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
-          commands.Add(dbCommand);
-          sbSql = new StringBuilder(sqlStub);
-          paramCounter = 0;
-          rowValueCounter = 0;
-          dbCommand = CreateCommand("", null);
-        }
-        var ex = item.ToExpando();
-
-        // Can't insert against an Identity field:
-        var itemSchema = (IDictionary<string, object>)ex;
-        if (PkIsIdentityColumn) {
-          var col = itemSchema.FirstOrDefault(x => x.Key.Equals(PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-          itemSchema.Remove(col);
-        }
-        var sbParamGroup = new StringBuilder();
-        foreach (var fieldValue in itemSchema.Values) {
-          sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
-          dbCommand.AddParam(fieldValue);
-          paramCounter++;
-        }
-        // Make a whole record to insert (we are inserting like this - (@0,@1,@2), (@3,@4,@5), (etc, etc, etc) . . .
-        sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
-        rowValueCounter++;
-      }
-      dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
-      commands.Add(dbCommand);
-      return commands;
-    }
-
     /// <summary>
     /// Creates a command for use with transactions - internal stuff mostly, but here for you to play with
     /// </summary>
@@ -404,8 +341,6 @@ namespace Biggy
     public abstract string GetInsertReturnValueSQL();
 
     public T Insert (T item) {
-      //var ex = item.ToExpando();
-
       if (BeforeSave(item)) {
         using (var conn = OpenConnection()) {
           var cmd = (DbCommand)CreateInsertCommand(item);
@@ -415,7 +350,6 @@ namespace Biggy
         }
       }
       return item;
-
     }
 
     /// <summary>
@@ -426,26 +360,78 @@ namespace Biggy
     /// <param name="items"></param>
     /// <returns></returns>
     public int BulkInsert(List<T> items) {
+      int rowsAffected = 0;
+      const int MAGIC_PG_PARAMETER_LIMIT = 2100;
+      const int MAGIC_PG_ROW_VALUE_LIMIT = 1000;
       var first = items.First();
-      var ex = first.ToExpando();
-      var itemSchema = (IDictionary<string, object>)ex;
-      var itemParameterCount = itemSchema.Values.Count();
-      var requiredParams = items.Count * itemParameterCount;
-      var batchCounter = requiredParams / 2000;
+      string insertClause = "";
+      var sbSql = new StringBuilder("");
 
-      var rowsAffected = 0;
-      if (items.Count() > 0) {
-        using (var conn = OpenConnection()) {
-          var commands = CreateInsertBatchCommands(items);
-          foreach (var cmd in commands) {
-            cmd.Connection = conn;
-            rowsAffected += cmd.ExecuteNonQuery();
+      using (var conn = OpenConnection()) {
+        using (var transaction = conn.BeginTransaction()) {
+          var commands = new List<DbCommand>();
+          DbCommand dbCommand = conn.CreateCommand();
+          dbCommand.Transaction = transaction;
+          var paramCounter = 0;
+          var rowValueCounter = 0;
+
+          foreach (var item in items) {
+            var itemEx = item.ToExpando();
+            var itemSchema = itemEx as IDictionary<string, object>;
+            var sbParamGroup = new StringBuilder();
+            if (this.PkIsIdentityColumn) {
+              // Don't insert against a serial id:
+              string key = itemSchema.Keys.First(k => k.ToString().Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+              itemSchema.Remove(key);
+            }
+            // Build the first part of the INSERT, including delimited column names:
+            if (item.Equals(first)) {
+              var sbFieldNames = new StringBuilder();
+              foreach (var field in itemSchema) {
+                sbFieldNames.AppendFormat("{0},", field.Key);
+              }
+              var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
+              string stub = "INSERT INTO {0} ({1}) VALUES ";
+              insertClause = string.Format(stub, this.TableName, string.Join(", ", keys));
+              sbSql = new StringBuilder(insertClause);
+            }
+            foreach (var key in itemSchema.Keys) {
+              if (paramCounter + itemSchema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
+                dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+                commands.Add(dbCommand);
+                sbSql = new StringBuilder(insertClause);
+                paramCounter = 0;
+                rowValueCounter = 0;
+                dbCommand = conn.CreateCommand();
+                dbCommand.Transaction = transaction;
+              }
+              // Add the Param groups to the end:
+              if (key == "search") {
+                sbParamGroup.AppendFormat("to_tsvector(@{0}),", paramCounter.ToString());
+              } else {
+                sbParamGroup.AppendFormat("@{0},", paramCounter.ToString());
+              }
+              dbCommand.AddParam(itemSchema[key]);
+              paramCounter++;
+            }
+            // Add the row params to the end of the sql:
+            sbSql.AppendFormat("({0}),", sbParamGroup.ToString().Substring(0, sbParamGroup.Length - 1));
+            rowValueCounter++;
+          }
+          dbCommand.CommandText = sbSql.ToString().Substring(0, sbSql.Length - 1);
+          commands.Add(dbCommand);
+          try {
+            foreach (var cmd in commands) {
+              rowsAffected += cmd.ExecuteNonQuery();
+            }
+            transaction.Commit();
+          } catch (Exception) {
+            transaction.Rollback();
           }
         }
       }
       return rowsAffected;
     }
-
 
     public int Update(T item)
     {
@@ -456,7 +442,6 @@ namespace Biggy
           result = cmd.ExecuteNonQuery();
         }
       }
-
       return result;
     }
 

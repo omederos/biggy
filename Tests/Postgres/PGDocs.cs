@@ -73,7 +73,7 @@ namespace Tests.Postgres {
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with string key")]
     static void InsertsManyMonkeys()
     {
-      int INSERT_QTY = 10000;
+      int INSERT_QTY = 100;
       var monkies = new PGDocumentList<Monkey>("northwindPG");
       monkies.Clear();
 
@@ -96,15 +96,15 @@ namespace Tests.Postgres {
 
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with integer key")]
     static void InsertsManyActors() {
+      int INSERT_QTY = 100;
       var actors = new PGDocumentList<Actor>("northwindPG");
       var bulkList = new List<Actor>();
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < INSERT_QTY; i++) {
         var newActor = new Actor { First_Name = "Actor " + i, Last_Name = "Test" };
         bulkList.Add(newActor);
       }
       actors.AddRange(bulkList);
-      Assert.True(actors.Last().Actor_ID > 90);
-      
+      Assert.True(actors.Last().Actor_ID > INSERT_QTY);
     }
 
   }
