@@ -91,7 +91,9 @@ namespace Tests.Postgres {
       var actors = new PGDocumentList<Actor>("northwindPG");
       var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
       actors.Add(newActor);
-      Assert.True(newActor.Actor_ID > 0);
+      int newId = newActor.Actor_ID;
+      actors.Reload();
+      Assert.True(actors.Any(a => a.Actor_ID == newId));
     }
 
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with integer key")]

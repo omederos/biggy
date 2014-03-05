@@ -53,6 +53,15 @@ namespace Biggy.Postgres {
     /// </summary>
     /// <param name="item"></param>
     public override void Add(T item) {
+      this.addItem(item);
+      if(PKIsIdentity) {
+        // Sync the JSON ID with the serial PK:
+        var ex = this.SetDataForDocument(item);
+        this.Update(item);
+      }
+    }
+
+    internal void addItem(T item) {
       var expando = base.SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
       var vals = new List<string>();
@@ -75,50 +84,15 @@ namespace Biggy.Postgres {
       }
       var sb = new StringBuilder();
       sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
-      var sql = sb.ToString(); 
-      var newKey = this.Model.Scalar(sql, args.ToArray());
-      //set the key
-      this.Model.SetPrimaryKey(item, newKey);
-      base.Add(item);
-
-      if(PKIsIdentity)
-      {
-        // Sync the JSON ID with the serial PK:
-        var ex = this.SetDataForDocument(item);
-        this.Update(item);
-      }
-    }
-
-    internal int getNextSerialPk(T item)
-    {
-      var expando = base.SetDataForDocument(item);
-      var dc = expando as IDictionary<string, object>;
-      var vals = new List<string>();
-      var args = new List<object>();
-      var index = 0;
-
-      var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-      if (this.Model.PkIsIdentityColumn) {
-        //don't update the Primary Key
-        dc.Remove(keyColumn);
-      }
-      foreach (var key in dc.Keys) {
-        if (key == "search") {
-          vals.Add(string.Format("to_tsvector(@{0})", index));
-        }
-        else {
-          vals.Add(string.Format("@{0}", index));
-        }
-        args.Add(dc[key]);
-        index++;
-      }
-      var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
       var sql = sb.ToString();
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key
       this.Model.SetPrimaryKey(item, newKey);
       base.Add(item);
+    }
+
+    internal int getNextSerialPk(T item) {
+      this.addItem(item);
       this.Remove(item);
 
       var props = item.GetType().GetProperties();

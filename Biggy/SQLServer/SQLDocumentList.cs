@@ -58,6 +58,15 @@ namespace Biggy.SQLServer {
     /// </summary>
     /// <param name="item"></param>
     public override void Add(T item) {
+      this.addItem(item);
+      if (PKIsIdentity) {
+        // Sync the JSON ID with the serial PK:
+        var ex = this.SetDataForDocument(item);
+        this.Update(item);
+      }
+    }
+
+    internal void addItem(T item) {
       var expando = SetDataForDocument(item);
       var dc = expando as IDictionary<string, object>;
       var vals = new List<string>();
@@ -76,7 +85,7 @@ namespace Biggy.SQLServer {
       }
       var sb = new StringBuilder();
       sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}); SELECT SCOPE_IDENTITY() as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals));
-      var sql = sb.ToString(); 
+      var sql = sb.ToString();
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key
       this.Model.SetPrimaryKey(item, newKey);
@@ -84,11 +93,13 @@ namespace Biggy.SQLServer {
     }
 
     // This is a hack mainly used by AddRange:
-    int AddItem(T item) {
-      this.Add(item);
+    int getNextSerialPk(T item) {
+      this.addItem(item);
+      this.Remove(item);
+
       var props = item.GetType().GetProperties();
       var pk = props.First(p => p.Name == this.PrimaryKeyField);
-      return (int)pk.GetValue(item);
+      return (int)pk.GetValue(item) + 1;
     }
 
     /// <summary>
@@ -105,10 +116,8 @@ namespace Biggy.SQLServer {
       // We need to add and remove an item to get the starting serial pk:
       int nextSerialPk = 0;
       if (this.PKIsIdentity) {
-        // HACK: But don't see ANY other way to do this:
-        nextSerialPk = this.AddItem(first) + 1;
-        // We could leave the inserted and remove from the list, but then the insert is outside the bulk transaction scope:
-        this.Remove(first);
+        // HACK: This is SO bad, but don't see ANY other way to do this:
+        nextSerialPk = this.getNextSerialPk(first);
       }
       string insertClause = "";
       var sbSql = new StringBuilder("");

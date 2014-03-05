@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Biggy;
 using Biggy.SQLServer;
 using Xunit;
+using Newtonsoft.Json;
 
 namespace Tests.SQLServer {
 
@@ -58,6 +59,7 @@ namespace Tests.SQLServer {
       public string Description { get; set; }
     }
 
+
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with string key")]
     static void InsertsManyMonkeys() {
       int INSERT_QTY = 10000;
@@ -75,9 +77,13 @@ namespace Tests.SQLServer {
     [Fact(DisplayName = "Will create a table with serial PK")]
     public void CreatesSerialPK() {
       var actors = new SQLDocumentList<Actor>("northwind");
+      actors.Clear();
       var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
       actors.Add(newActor);
-      Assert.True(newActor.Actor_ID > 0);
+      int newId = newActor.Actor_ID;
+
+      actors.Reload();
+      Assert.True(actors.Any(a => a.Actor_ID == newId));
     }
 
     [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with integer key")]
