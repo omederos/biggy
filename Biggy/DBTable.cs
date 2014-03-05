@@ -364,7 +364,6 @@ namespace Biggy
       const int MAGIC_PG_PARAMETER_LIMIT = 2100;
       const int MAGIC_PG_ROW_VALUE_LIMIT = 1000;
       var first = items.First();
-      int i = items.IndexOf(first);
       string insertClause = "";
       var sbSql = new StringBuilder("");
 
@@ -376,25 +375,6 @@ namespace Biggy
           var paramCounter = 0;
           var rowValueCounter = 0;
 
-          // Build the first part of the INSERT, including delimited column names:
-          // HACK: had to move this back outside the forloop, and introcude some 
-          // minor duplication because Rob will occasionally, fearlessly, override the 
-          // Equals operator on his POCOs  ;-)
-          var sbFieldNames = new StringBuilder();
-          var rowSchema = first.ToDictionary();
-          if (this.PkIsIdentityColumn) {
-            // Don't insert against a serial id:
-            string key = rowSchema.Keys.First(k => k.ToString().Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-            rowSchema.Remove(key);
-          }
-          foreach (var field in rowSchema) {
-            sbFieldNames.AppendFormat("{0},", field.Key);
-          }
-          var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
-          string stub = "INSERT INTO {0} ({1}) VALUES ";
-          insertClause = string.Format(stub, this.TableName, string.Join(", ", keys));
-          sbSql = new StringBuilder(insertClause);
-
           foreach (var item in items) {
             var itemEx = item.ToExpando();
             var itemSchema = itemEx as IDictionary<string, object>;
@@ -403,6 +383,17 @@ namespace Biggy
               // Don't insert against a serial id:
               string key = itemSchema.Keys.First(k => k.ToString().Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
               itemSchema.Remove(key);
+            }
+            // Build the first part of the INSERT, including delimited column names:
+            if (ReferenceEquals(item, first)) {
+              var sbFieldNames = new StringBuilder();
+              foreach (var field in itemSchema) {
+                sbFieldNames.AppendFormat("{0},", field.Key);
+              }
+              var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
+              string stub = "INSERT INTO {0} ({1}) VALUES ";
+              insertClause = string.Format(stub, this.TableName, string.Join(", ", keys));
+              sbSql = new StringBuilder(insertClause);
             }
             foreach (var key in itemSchema.Keys) {
               if (paramCounter + itemSchema.Count >= MAGIC_PG_PARAMETER_LIMIT || rowValueCounter >= MAGIC_PG_ROW_VALUE_LIMIT) {
@@ -442,8 +433,7 @@ namespace Biggy
       return rowsAffected;
     }
 
-    public int Update(T item)
-    {
+    public int Update(T item)  {
       var result = 0;
       if (BeforeSave(item)) {
         using (var conn = OpenConnection()) {
