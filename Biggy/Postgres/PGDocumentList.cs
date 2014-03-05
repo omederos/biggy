@@ -170,7 +170,7 @@ namespace Biggy.Postgres {
             var itemSchema = itemEx as IDictionary<string, object>;
             var sbParamGroup = new StringBuilder();
 
-            if (item.Equals(first)) {
+            if (ReferenceEquals(item, first)) {
               string stub = "INSERT INTO {0} ({1}) VALUES ";
               insertClause = string.Format(stub, this.TableName, string.Join(", ", itemSchema.Keys));
               sbSql = new StringBuilder(insertClause);
