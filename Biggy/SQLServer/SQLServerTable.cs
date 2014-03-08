@@ -87,5 +87,9 @@ namespace Biggy.SQLServer {
       return result;
     }
 
+
+    protected override string DbDelimiterFormatString {
+      get { return "[{0}]"; }
+    }
   }
 }

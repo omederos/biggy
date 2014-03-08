@@ -86,5 +86,8 @@ namespace Biggy.Postgres {
 
     }
 
+    protected override string DbDelimiterFormatString {
+      get { return "\"{0}\""; }
+    }
   }
 }

@@ -55,6 +55,8 @@
   <ItemGroup>
     <Compile Include="Attributes.cs" />
     <Compile Include="BiggyEventArgs.cs" />
+    <Compile Include="DbColumnMapping.cs" />
+    <Compile Include="DbColumnMappingLookup.cs" />
     <Compile Include="DBDocumentList.cs" />
     <Compile Include="DBList.cs" />
     <Compile Include="InMemoryList.cs" />

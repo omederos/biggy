@@ -29,6 +29,10 @@ namespace Biggy {
       SetFullTextColumns();
       var pkIsIdentity = this.PrimaryKeyType == typeof(int);
       SetModel();
+      // We need to explicitly map the column names because the object type is dynamic:
+      Model.PropertyColumnMappings.Add(this.PrimaryKeyField, this.PrimaryKeyField);
+      Model.PropertyColumnMappings.Add("body", "body");
+      Model.PropertyColumnMappings.Add("search", "search");
       TryLoadData();
     }
 

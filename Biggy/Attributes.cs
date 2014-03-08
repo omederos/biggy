@@ -11,4 +11,11 @@ namespace Biggy {
   public class PrimaryKeyAttribute : Attribute {
 
   }
+
+  public class DbColumnNameAttribute : Attribute {
+    public string Name { get; protected set; }
+    public DbColumnNameAttribute(string name) {
+      this.Name = name;
+    }
+  }
 }
