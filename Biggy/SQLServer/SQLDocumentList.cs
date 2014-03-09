@@ -25,7 +25,7 @@ namespace Biggy.SQLServer {
     /// Drops all data from the table - BEWARE
     /// </summary>
     public override void Clear() {
-      this.Model.Execute("DELETE FROM " + TableName);
+      this.Model.Execute("DELETE FROM " + Model.DelimitedTableName);
       base.Clear();
     }
 
@@ -41,7 +41,7 @@ namespace Biggy.SQLServer {
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search nvarchar(MAX)";
           }
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", Model.DelimitedTableName, Model.DelimitedPkColumnName, idType, fullTextColumn);
           this.Model.Execute(sql);
           //if (this.FullTextFields.Length > 0) {
           //  var indexSQL = string.Format("CREATE FULL TEXT INDEX ON {0}({1})",this.TableName,string.Join(",",this.FullTextFields));
@@ -84,7 +84,7 @@ namespace Biggy.SQLServer {
         index++;
       }
       var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}); SELECT SCOPE_IDENTITY() as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals));
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}); SELECT SCOPE_IDENTITY() as newID;", Model.DelimitedTableName, string.Join(",", dc.Keys), string.Join(",", vals));
       var sql = sb.ToString();
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key
@@ -126,7 +126,7 @@ namespace Biggy.SQLServer {
         using (var tdbTransaction = connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead)) {
           var commands = new List<DbCommand>();
           // Lock the table, so nothing will disrupt the pk sequence:
-          string lockTableSQL = string.Format("SELECT 1 FROM {0} WITH(TABLOCKX) ", this.TableName);
+          string lockTableSQL = string.Format("SELECT 1 FROM {0} WITH(TABLOCKX) ", Model.DelimitedTableName);
           DbCommand dbCommand = Model.CreateCommand(lockTableSQL, connection);
           dbCommand.Transaction = tdbTransaction;
           dbCommand.ExecuteNonQuery();
@@ -148,7 +148,7 @@ namespace Biggy.SQLServer {
 
             if (ReferenceEquals(item, first)) {
               string stub = "INSERT INTO {0} ({1}) VALUES ";
-              insertClause = string.Format(stub, this.TableName, string.Join(", ", itemSchema.Keys));
+              insertClause = string.Format(stub, Model.DelimitedTableName, string.Join(", ", itemSchema.Keys));
               sbSql = new StringBuilder(insertClause);
             }
             foreach (var key in itemSchema.Keys) {
@@ -199,7 +199,7 @@ namespace Biggy.SQLServer {
       var index = 0;
       var sb = new StringBuilder();
       var args = new List<object>();
-      sb.AppendFormat("UPDATE {0} SET ", this.TableName);
+      sb.AppendFormat("UPDATE {0} SET ", Model.DelimitedTableName);
       foreach (var key in dc.Keys) {
         var stub = string.Format("{0}=@{1},", key, index);
         args.Add(dc[key]);

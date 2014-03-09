@@ -121,15 +121,28 @@ namespace Biggy
       }
     }
 
+    public virtual string DelimitedTableName {
+      get {
+        return string.Format(this.DbDelimiterFormatString, this.TableName);
+      }
+    }
+
+    public string DelimitedPkColumnName {
+      get {
+        return string.Format(this.DbDelimiterFormatString, this.PrimaryKeyField);
+      }
+    }
+
     public virtual string PrimaryKeyField { get; set; }
     public virtual bool PkIsIdentityColumn { get; set; }
     public virtual string TableName { get; set; }
+
     public string DescriptorField { get; protected set; }
 
 
     public IEnumerable<T> Where(string where, params object[] args) {
       var sql = BuildSelect(where, "", -1);
-      var formatted = string.Format(sql, "*", this.TableName);
+      var formatted = string.Format(sql, "*", this.DelimitedTableName);
       return Query<T>(formatted, args);
     }
 
@@ -264,7 +277,7 @@ namespace Biggy
 
     public IEnumerable<T> All<T>(string where = "", string orderBy = "", int limit = 0, string columns = "*", params object[] args) where T : new() {
       string sql = BuildSelect(where, orderBy, limit);
-      var formatted = string.Format(sql, columns, TableName);
+      var formatted = string.Format(sql, columns, this.DelimitedTableName);
       return Query<T>(formatted, args);
     }
 
@@ -285,7 +298,7 @@ namespace Biggy
     /// </summary>
     public T Find<T>(object key) where T : new() {
       var result = new T();
-      var sql = GetSingleSelect(PrimaryKeyField + "=@0");
+      var sql = GetSingleSelect(this.DelimitedPkColumnName + "=@0");
       return Query<T>(sql, key).FirstOrDefault();
     }
 
@@ -342,7 +355,7 @@ namespace Biggy
       if (counter > 0) {
         var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 1);
         var vals = sbVals.ToString().Substring(0, sbVals.Length - 1);
-        var sql = string.Format(stub, TableName, keys, vals);
+        var sql = string.Format(stub, this.DelimitedTableName, keys, vals);
         result.CommandText = sql;
       }
       else throw new InvalidOperationException("Can't parse this object to the database - there are no properties set");
@@ -378,7 +391,7 @@ namespace Biggy
         result.AddParam(key);
         //strip the last commas
         var keys = sbKeys.ToString().Substring(0, sbKeys.Length - 4);
-        result.CommandText = string.Format(stub, TableName, keys, PrimaryKeyField, counter);
+        result.CommandText = string.Format(stub, this.DelimitedTableName, keys, this.DelimitedPkColumnName, counter);
       } else {
         throw new InvalidOperationException("No parsable object was sent in - could not divine any name/value pairs");
       }
@@ -389,9 +402,9 @@ namespace Biggy
     /// Removes one or more records from the DB according to the passed-in WHERE
     /// </summary>
     DbCommand CreateDeleteCommand(string where = "", object key = null, params object[] args) {
-      var sql = string.Format("DELETE FROM {0} ", TableName);
+      var sql = string.Format("DELETE FROM {0} ", this.DelimitedTableName);
       if (key != null) {
-        sql += string.Format("WHERE {0}=@0", PrimaryKeyField);
+        sql += string.Format("WHERE {0}=@0", this.DelimitedPkColumnName);
         args = new object[] { key };
       }
       else if (!string.IsNullOrEmpty(where)) {
@@ -459,7 +472,7 @@ namespace Biggy
               }
               var keys = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
               string stub = "INSERT INTO {0} ({1}) VALUES ";
-              insertClause = string.Format(stub, this.TableName, string.Join(", ", keys));
+              insertClause = string.Format(stub, this.DelimitedTableName, string.Join(", ", keys));
               sbSql = new StringBuilder(insertClause);
             }
             foreach (var key in itemSchema.Keys) {

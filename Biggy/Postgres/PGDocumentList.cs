@@ -39,7 +39,7 @@ namespace Biggy.Postgres {
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search tsvector";
           }
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", this.TableName, this.PrimaryKeyField, idType, fullTextColumn);
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", Model.DelimitedTableName, Model.DelimitedPkColumnName, idType, fullTextColumn);
           this.Model.Execute(sql);
           TryLoadData();
         } else {
@@ -83,7 +83,7 @@ namespace Biggy.Postgres {
         index++;
       }
       var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", this.TableName, string.Join(",", dc.Keys), string.Join(",", vals), this.PrimaryKeyField);
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", Model.DelimitedTableName, string.Join(",", dc.Keys), string.Join(",", vals), Model.DelimitedPkColumnName);
       var sql = sb.ToString();
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key
@@ -124,7 +124,7 @@ namespace Biggy.Postgres {
         using (var tdbTransaction = connection.BeginTransaction(System.Data.IsolationLevel.RepeatableRead)) {
           var commands = new List<DbCommand>();
           // Lock the table, so nothing will disrupt the pk sequence:
-          string lockTableSQL = string.Format("LOCK TABLE {0} in ACCESS EXCLUSIVE MODE", this.TableName);
+          string lockTableSQL = string.Format("LOCK TABLE {0} in ACCESS EXCLUSIVE MODE", Model.DelimitedTableName);
           DbCommand dbCommand = Model.CreateCommand(lockTableSQL, connection);
           dbCommand.Transaction = tdbTransaction;
           dbCommand.ExecuteNonQuery();
@@ -146,7 +146,7 @@ namespace Biggy.Postgres {
 
             if (ReferenceEquals(item, first)) {
               string stub = "INSERT INTO {0} ({1}) VALUES ";
-              insertClause = string.Format(stub, this.TableName, string.Join(", ", itemSchema.Keys));
+              insertClause = string.Format(stub, Model.DelimitedTableName, string.Join(", ", itemSchema.Keys));
               sbSql = new StringBuilder(insertClause);
             }
             foreach (var key in itemSchema.Keys) {
@@ -197,7 +197,7 @@ namespace Biggy.Postgres {
       var index = 0;
       var sb = new StringBuilder();
       var args = new List<object>();
-      sb.AppendFormat("UPDATE {0} SET ", this.TableName);
+      sb.AppendFormat("UPDATE {0} SET ", Model.DelimitedTableName);
       foreach (var key in dc.Keys) {
         var stub = string.Format("{0}=@{1},", key, index);
         if (key == "search") {

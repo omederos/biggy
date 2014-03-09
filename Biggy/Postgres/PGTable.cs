@@ -46,15 +46,15 @@ namespace Biggy.Postgres {
       return sql;
     }
     protected override string GetSingleSelect(string where) {
-      return string.Format("SELECT * FROM {0} WHERE {1} LIMIT 1", TableName, where);
+      return string.Format("SELECT * FROM {0} WHERE {1} LIMIT 1", this.DelimitedTableName, where);
     }
     public override string GetInsertReturnValueSQL() {
-      return " RETURNING " + this.PrimaryKeyField + " as newId";
+      return " RETURNING " + this.DelimitedPkColumnName + " as newId";
     }
 
     public IEnumerable<T> FullTextOnTheFly(string query, params string[] columns) {
       var columnList = String.Join(" || ", columns);
-      var sql = string.Format("SELECT * FROM {0} WHERE to_tsvector('english', {1}) @@ to_tsquery(@0);", TableName, columnList);
+      var sql = string.Format("SELECT * FROM {0} WHERE to_tsvector('english', {1}) @@ to_tsquery(@0);", this.DelimitedTableName, columnList);
       return Query<T>(sql, query);
     }
 
@@ -81,7 +81,7 @@ namespace Biggy.Postgres {
       if(columnName == null){
         throw new InvalidOperationException("Can't find a PGFullText attribute on " + typeof(T).Name + " - please be sure to add that");
       }
-      var sql = string.Format("select *, ts_rank_cd({2},to_tsquery(@0)) as rank from {1} where {2} @@ to_tsquery(@0) order by rank DESC;",query,TableName,columnName);
+      var sql = string.Format("select *, ts_rank_cd({2},to_tsquery(@0)) as rank from {1} where {2} @@ to_tsquery(@0) order by rank DESC;",query,this.DelimitedTableName,columnName);
       return Query<T>(sql, query);
 
     }

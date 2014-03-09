@@ -74,7 +74,7 @@ namespace Biggy {
           keyList.Add(this.Model.GetPrimaryKey(item).ToString());
         }
         var keySet = String.Join(",", keyList.ToArray());
-        var inStatement = this.Model.PrimaryKeyField + " IN (" + keySet + ")";
+        var inStatement = this.Model.DelimitedPkColumnName + " IN (" + keySet + ")";
         removed = this.Model.DeleteWhere(inStatement, "");
 
         this.Reload();

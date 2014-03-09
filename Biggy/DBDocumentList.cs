@@ -77,7 +77,7 @@ namespace Biggy {
     /// Drops all data from the table - BEWARE
     /// </summary>
     public override void Clear() {
-      this.Model.Execute("DELETE FROM " + TableName);
+      this.Model.Execute("DELETE FROM " + Model.DelimitedTableName);
       base.Clear();
     }
 
@@ -87,7 +87,7 @@ namespace Biggy {
     /// Reloads the internal memory list
     /// </summary>
     public void Reload() {
-      var results = this.Model.Query("select body from " + this.TableName);//this.Model.All<T>().ToList();
+      var results = this.Model.Query("select body from " + Model.DelimitedTableName);//this.Model.All<T>().ToList();
       //our results are all dynamic - but all we care about is the body
       var sb = new StringBuilder();
       foreach (var item in results) {
