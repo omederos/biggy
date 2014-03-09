@@ -145,8 +145,14 @@ namespace Biggy.Postgres {
             var sbParamGroup = new StringBuilder();
 
             if (ReferenceEquals(item, first)) {
+              var sbFieldNames = new StringBuilder();
+              foreach (var field in itemSchema) {
+                string mappedColumnName = Model.PropertyColumnMappings.FindByProperty(field.Key).DelimitedColumnName;
+                sbFieldNames.AppendFormat("{0},", mappedColumnName);
+              }
+              var delimitedColumnNames = sbFieldNames.ToString().Substring(0, sbFieldNames.Length - 1);
               string stub = "INSERT INTO {0} ({1}) VALUES ";
-              insertClause = string.Format(stub, Model.DelimitedTableName, string.Join(", ", itemSchema.Keys));
+              insertClause = string.Format(stub, Model.DelimitedTableName, string.Join(", ", delimitedColumnNames));
               sbSql = new StringBuilder(insertClause);
             }
             foreach (var key in itemSchema.Keys) {

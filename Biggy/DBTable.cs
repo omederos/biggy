@@ -25,7 +25,36 @@ namespace Biggy
 
     protected abstract string DbDelimiterFormatString { get; }
     public virtual DbColumnMappingLookup PropertyColumnMappings { get; private set; }
-    protected void mapDbColumns() {
+    //protected void mapDbColumns() {
+    //  var columnNames = this.getTableColumns();
+    //  if (this.PropertyColumnMappings == null) {
+    //    this.PropertyColumnMappings = new DbColumnMappingLookup(this.DbDelimiterFormatString);
+    //  }
+    //  var item = new T();
+    //  var props = item.GetType().GetProperties();
+    //  string replaceString = "[^a-zA-Z1-9]";
+    //  var rgx = new Regex(replaceString);
+
+    //  foreach (var property in props) {
+    //    string propertyName = rgx.Replace(property.Name.ToLower(), "");
+    //    string columnName = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == propertyName);
+    //    if (!string.IsNullOrWhiteSpace(columnName)) {
+    //      this.PropertyColumnMappings.Add(columnName, property.Name);
+    //    } else {
+    //      DbColumnNameAttribute mappedColumnAttribute = null;
+    //      var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnNameAttribute));
+    //      if (attribute != null) {
+    //        // Use the column name found in the attribute:
+    //        mappedColumnAttribute = attribute as DbColumnNameAttribute;
+    //        columnName = string.Format(this.DbDelimiterFormatString, mappedColumnAttribute.Name);
+    //        this.PropertyColumnMappings.Add(columnName, property.Name);
+    //      }
+    //    }
+    //  }
+    //}
+
+    protected void mapDbColumns()
+    {
       var columnNames = this.getTableColumns();
       if (this.PropertyColumnMappings == null) {
         this.PropertyColumnMappings = new DbColumnMappingLookup(this.DbDelimiterFormatString);
@@ -38,20 +67,24 @@ namespace Biggy
       foreach (var property in props) {
         string propertyName = rgx.Replace(property.Name.ToLower(), "");
         string columnName = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == propertyName);
-        if (!string.IsNullOrWhiteSpace(columnName)) {
+
+        // Hateful as this is, if we allow setting of attributes, we need to check for those FIRST,
+        // otherwise the client will be confused by inconsistent behavior. 
+        DbColumnNameAttribute mappedColumnAttribute = null;
+        var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnNameAttribute));
+        if (attribute != null) {
+          // Use the column name found in the attribute:
+          mappedColumnAttribute = attribute as DbColumnNameAttribute;
+          columnName = mappedColumnAttribute.Name;
           this.PropertyColumnMappings.Add(columnName, property.Name);
         } else {
-          DbColumnNameAttribute mappedColumnAttribute = null;
-          var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnNameAttribute));
-          if (attribute != null) {
-            // Use the column name found in the attribute:
-            mappedColumnAttribute = attribute as DbColumnNameAttribute;
-            columnName = string.Format(this.DbDelimiterFormatString, mappedColumnAttribute.Name);
-            this.PropertyColumnMappings.Add(columnName, propertyName);
+          if (!string.IsNullOrWhiteSpace(columnName)) {
+            this.PropertyColumnMappings.Add(columnName, property.Name);
           }
         }
       }
     }
+
 
     protected virtual List<string> getTableColumns() {
       var result = new List<string>();
