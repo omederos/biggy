@@ -13,98 +13,155 @@ namespace Tests.SQLServer {
   [Trait("SQL Server Document Store","")]
   public class SQLServerDocs {
 
+    public string _connectionStringName = "chinook";
 
-    SQLDocumentList<CustomerDocument> docs;
+    SQLDocumentList<ClientDocument> clientDocs;
+    SQLDocumentList<MonkeyDocument> monkeyDocs;
     public SQLServerDocs() {
-      docs = new SQLDocumentList<CustomerDocument>("northwind");
-      //drop and reload
-      docs.Clear();
+      // Start fresh each time, with no existing table, to keep serial PK's from exploding:
+      if(this.TableExists("ClientDocuments")) {
+        this.DropTable("ClientDocuments");
+      }
+      if (this.TableExists("MonkeyDocuments")) {
+        this.DropTable("MonkeyDocuments");
+      }
+      clientDocs = new SQLDocumentList<ClientDocument>(_connectionStringName);
+      monkeyDocs = new SQLDocumentList<MonkeyDocument>(_connectionStringName);
+      clientDocs.Clear();
     }
 
 
-    [Fact(DisplayName = "Creates a store if one doesn't exist")]
-    public void FactName() {
-      Assert.True(docs.Count() == 0);
-    }
-
-    [Fact(DisplayName = "Adds a document")]
-    public void AddsDocument() {
-      var newCustomer = new CustomerDocument { Email = "rob@tekpub.com", First = "Rob", Last = "Conery" };
-      docs.Add(newCustomer);
-      Assert.Equal(1, docs.Count);
-    }
-
-    [Fact(DisplayName = "Updates a document")]
-    public void UpdatesDocument() {
-      var newCustomer = new CustomerDocument { Email = "rob@tekpub.com", First = "Rob", Last = "Conery" };
-      docs.Add(newCustomer);
-      newCustomer.First = "Bill";
-      var updated = docs.Update(newCustomer);
-      Assert.Equal(1, updated);
-    }
-
-    [Fact(DisplayName = "Deletes a document")]
-    public void DeletesDocument() {
-      var newCustomer = new CustomerDocument { Email = "rob@tekpub.com", First = "Rob", Last = "Conery" };
-      docs.Add(newCustomer);
-      var removed = docs.Remove(newCustomer);
-      Assert.True(removed);
-    }
-
-    class Monkey {
-      [PrimaryKey]
-      public string Name { get; set; }
-      public DateTime Birthday { get; set; }
-      [FullText]
-      public string Description { get; set; }
+    [Fact(DisplayName = "Creates a store with a serial PK if one doesn't exist")]
+    public void Creates_Document_Table_With_Serial_PK_If_Not_Present() {
+      Assert.True(clientDocs.Count() == 0);
     }
 
 
-    [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with string key")]
-    static void InsertsManyMonkeys() {
-      int INSERT_QTY = 10000;
-      var monkies = new SQLDocumentList<Monkey>("northwind");
+    [Fact(DisplayName = "Creates a store with a string PK if one doesn't exist")]
+    public void Creates_Document_Table_With_String_PK_If_Not_Present() {
+      Assert.True(monkeyDocs.Count() == 0);
+    }
+
+
+    [Fact(DisplayName = "Adds a document with a serial PK")]
+    public void Adds_Document_With_Serial_PK() {
+      var newCustomer = new ClientDocument { 
+        Email = "rob@tekpub.com", 
+        FirstName = "Rob", 
+        LastName = "Conery" };
+      clientDocs.Add(newCustomer);
+      Assert.Equal(1, clientDocs.Count);
+    }
+
+
+    [Fact(DisplayName = "Updates a document with a serial PK")]
+    public void Updates_Document_With_Serial_PK() {
+      var newCustomer = new ClientDocument {
+        Email = "rob@tekpub.com",
+        FirstName = "Rob",
+        LastName = "Conery"
+      };
+      clientDocs.Add(newCustomer);
+      int idToFind = newCustomer.ClientDocumentId;
+      // Go find the new record after reloading:
+      clientDocs.Reload();
+      var updateMe = clientDocs.FirstOrDefault(cd => cd.ClientDocumentId == idToFind);
+      // Update:
+      updateMe.FirstName = "Bill";
+      clientDocs.Update(updateMe);
+      // Go find the updated record after reloading:
+      clientDocs.Reload();
+      var updated = clientDocs.FirstOrDefault(cd => cd.ClientDocumentId == idToFind);
+      Assert.True(updated.FirstName == "Bill");
+    }
+
+
+    [Fact(DisplayName = "Deletes a document with a serial PK")]
+    public void Deletes_Document_With_Serial_PK() {
+      var newCustomer = new ClientDocument {
+        Email = "rob@tekpub.com",
+        FirstName = "Rob",
+        LastName = "Conery"
+      };
+      clientDocs.Add(newCustomer);
+      // Count after adding new:
+      int initialCount = clientDocs.Count;
+      var removed = clientDocs.Remove(newCustomer);
+      clientDocs.Reload();
+      // Count after removing and reloading:
+      int finalCount = clientDocs.Count;
+      Assert.True(finalCount < initialCount && removed);
+    }
+
+
+    [Fact(DisplayName = "Bulk-Inserts new records as JSON documents with string key")]
+    public void Bulk_Inserts_Documents_With_String_PK() {
+      int INSERT_QTY = 100;
+      var monkies = new SQLDocumentList<MonkeyDocument>("chinook");
       monkies.Clear();
 
-      var addRange = new List<Monkey>();
+      var addRange = new List<MonkeyDocument>();
       for (int i = 0; i < INSERT_QTY; i++) {
-        addRange.Add(new Monkey { Name = "MONKEY " + i, Birthday = DateTime.Today, Description = "The Monkey on my back" });
+        addRange.Add(new MonkeyDocument { Name = "MONKEY " + i, Birthday = DateTime.Today, Description = "The Monkey on my back" });
       }
       var inserted = monkies.AddRange(addRange);
-      Assert.True(inserted == INSERT_QTY && monkies.Count == inserted);
+      Assert.True(inserted == INSERT_QTY);
     }
 
-    [Fact(DisplayName = "Will create a table with serial PK")]
-    public void CreatesSerialPK() {
-      var actors = new SQLDocumentList<Actor>("northwind");
-      actors.Clear();
-      var newActor = new Actor { First_Name = "Joe", Last_Name = "Blow" };
-      actors.Add(newActor);
-      int newId = newActor.Actor_ID;
 
-      actors.Reload();
-      Assert.True(actors.Any(a => a.Actor_ID == newId));
-    }
-
-    [Fact(DisplayName = "Inserts metric butt-load of new records as JSON documents with integer key")]
-    static void InsertsManyActors() {
-      var actors = new SQLDocumentList<Actor>("northwind");
-      var bulkList = new List<Actor>();
-      for (int i = 0; i < 100; i++) {
-        var newActor = new Actor { First_Name = "Actor " + i, Last_Name = "Test" };
-        bulkList.Add(newActor);
+    [Fact(DisplayName = "Bulk-Inserts new records as JSON documents with serial int key")]
+    static void Bulk_Inserts_Documents_With_Serial_PK() {
+      int insertQty = 100;
+      var ClientDocuments = new SQLDocumentList<ClientDocument>("chinook");
+      var bulkList = new List<ClientDocument>();
+      for (int i = 0; i < insertQty; i++) {
+        var newClientDocument = new ClientDocument { 
+          FirstName = "ClientDocument " + i, 
+          LastName = "Test",
+          Email = "jatten@example.com"
+        };
+        bulkList.Add(newClientDocument);
       }
-      actors.AddRange(bulkList);
-      Assert.True(actors.Last().Actor_ID > 90);
-
+      int inserted = ClientDocuments.AddRange(bulkList);
+      Assert.True(inserted == insertQty && ClientDocuments.Last().ClientDocumentId > insertQty);
     }
 
-    //[Fact(DisplayName = "Creates a FullText document table")]
-    //public void FullTextDocument() {
-    //  var films = new SQLDocumentList<Film>("northwind");
-    //  var film = new Film { Description = "Lorem ipsum", FullText = "Search on this marigold", Length = 100, ReleaseYear = DateTime.Today, Title = "Test Title" };
-    //  films.Add(film);
-    //  Assert.True(film.Film_ID > 0);
-    //}
+
+    ////[Fact(DisplayName = "Creates a FullText document table")]
+    ////public void FullTextDocument() {
+    ////  var films = new SQLDocumentList<Film>("chinook");
+    ////  var film = new Film { Description = "Lorem ipsum", FullText = "Search on this marigold", Length = 100, ReleaseYear = DateTime.Today, Title = "Test Title" };
+    ////  films.Add(film);
+    ////  Assert.True(film.Film_ID > 0);
+    ////}
+
+
+    void DropTable(string tableName)
+    {
+      string sql = string.Format("DROP TABLE {0}", tableName);
+      var Model = new SQLServerTable<dynamic>(_connectionStringName);
+      Model.Execute(sql);
+    }
+
+
+    bool TableExists(string tableName)
+    {
+      bool exists = false;
+      string select = ""
+          + "SELECT * FROM INFORMATION_SCHEMA.TABLES "
+          + "WHERE TABLE_SCHEMA = 'dbo' "
+          + "AND  TABLE_NAME = '{0}'";
+      string sql = string.Format(select, tableName);
+      var Model = new SQLServerTable<dynamic>(_connectionStringName);
+      var query = Model.Query<dynamic>(sql);
+      if (query.Count() > 0)
+      {
+        exists = true;
+      }
+      return exists;
+    }
+
+
+
   }
 }

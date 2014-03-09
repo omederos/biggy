@@ -7,67 +7,52 @@ using Biggy;
 
 namespace Tests {
 
-
   public class Film {
     [PrimaryKey]
     public int Film_ID { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }
-    public DateTime ReleaseYear { get; set; }
+    public int ReleaseYear { get; set; }
     public int Length { get; set; }
 
     [FullText]
     public string FullText { get; set; }
   }
 
-  public class CustomerDocument {
+
+  public class MonkeyDocument {
     [PrimaryKey]
+    public string Name { get; set; }
+    public DateTime Birthday { get; set; }
+    [FullText]
+    public string Description { get; set; }
+  }
+
+
+  public class Client {
+    public int ClientId { get; set; }
+    public string LastName { get; set; }
+    public string FirstName { get; set; }
     public string Email { get; set; }
-    public string First { get; set; }
+  }
+
+
+  public class ClientDocument {
+    public int ClientDocumentId { get; set; }
+    public string LastName { get; set; }
+    public string FirstName { get; set; }
+    public string Email { get; set; }
+  }
+
+
+  class MismatchedClient {
+    [DbColumnName("CLient_Id")]
+    public int Id { get; set; }
+    [DbColumnName("Last Name")]
     public string Last { get; set; }
-    public string FullName {
-      get {
-        return First + " " + Last;
-      }
-    }
-    public override bool Equals(object obj) {
-      var c = (CustomerDocument)obj;
-      return this.Email == c.Email;
-    }
-  }
-
-  public class Actor {
-    [PrimaryKey]
-    public int Actor_ID { get; set; }
-    public string First_Name { get; set; }
-    public string Last_Name { get; set; }
-    public string FullName {
-      get {
-        return this.First_Name + " " + this.Last_Name;
-      }
-    }
-
-    public override bool Equals(object obj) {
-      var p1 = (Actor)obj;
-      return this.Actor_ID == p1.Actor_ID;
-    }
-
-  }
-
-  public class Product {
-    public String Sku { get; set; }
-    public String Name { get; set; }
-    public Decimal Price { get; set; }
-    public DateTime CreatedAt { get; set; }
-
-    public Product() {
-      this.CreatedAt = DateTime.Now;
-    }
-
-    public override bool Equals(object obj) {
-      var p1 = (Product)obj;
-      return this.Sku == p1.Sku;
-    }
-
+    [DbColumnName("first_name")]
+    public string First { get; set; }
+    [DbColumnName("Email")]
+    public string EmailAddress { get; set; }
   }
 }

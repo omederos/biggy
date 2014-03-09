@@ -8,11 +8,11 @@ using Xunit;
 
 namespace Tests.Postgres {
   [Trait("PG Full Text Searching","")]
-  public class FullText {
+  public class PGFullText {
 
     PGList<Film> films;
-    public FullText() {
-      films = new PGList<Film>("dvds", "film", "film_id");
+    public PGFullText() {
+      films = new PGList<Film>("chinookPG", "film", "film_id");
     }
 
     [Fact(DisplayName = "Ad hoc TS Vector Query Returns Films")]

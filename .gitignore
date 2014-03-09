@@ -51,6 +51,9 @@ packages/
 *.log
 *.scc
 
+# NCrunch Files
+_NCrunch*
+
 # Visual C++ cache files
 ipch/
 *.aps
