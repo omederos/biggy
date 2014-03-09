@@ -4,36 +4,35 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Biggy.Postgres;
+using Biggy.SQLServer;
 
-namespace Biggy.Perf.PGDocuments {
+namespace Biggy.Perf.SQLDocument {
   class Benchmarks {
 
-    static string _connectionStringName = "chinookPG";
+    static string _connectionStringName = "chinook";
 
     public static void Run() {
       Console.WriteLine("===========================================================");
-      Console.WriteLine("POSTGRES - LOAD A BUNCH OF DOCUMENTS INTO A TABLE");
+      Console.WriteLine("SQL SERVER - LOAD A BUNCH OF DOCUMENTS INTO A TABLE");
       Console.WriteLine("===========================================================");
 
       Console.WriteLine("Connecting to SQL Document Store...");
 
       // Start clean and fresh . . .
-      if (Benchmarks.TableExists("clientdocuments")) {
+      if(Benchmarks.TableExists("clientdocuments")) {
         Benchmarks.DropTable("clientdocuments");
       }
 
-      var _clientDocuments = new PGDocumentList<ClientDocument>(_connectionStringName);
+      var _clientDocuments = new SQLDocumentList<ClientDocument>(_connectionStringName);
       _clientDocuments.Clear();
       var sw = new Stopwatch();
 
       var addRange = new List<ClientDocument>();
       for (int i = 0; i < 10000; i++) {
-        addRange.Add(new ClientDocument {
-          LastName = "Conery " + i,
-          FirstName = "Rob",
-          Email = "rob@tekpub.com"
-        });
+        addRange.Add(new ClientDocument { 
+          LastName = "Conery " + i, 
+          FirstName = "Rob", 
+          Email = "rob@tekpub.com" });
       }
       sw.Start();
       var inserted = _clientDocuments.AddRange(addRange);
@@ -44,7 +43,7 @@ namespace Biggy.Perf.PGDocuments {
       _clientDocuments.Clear();
       addRange.Clear();
       Benchmarks.DropTable("clientdocuments");
-      _clientDocuments = new PGDocumentList<ClientDocument>(_connectionStringName);
+      _clientDocuments = new SQLDocumentList<ClientDocument>(_connectionStringName);
       sw.Reset();
 
       Console.WriteLine("Loading 100,000 documents");
@@ -80,7 +79,7 @@ namespace Biggy.Perf.PGDocuments {
 
     static void DropTable(string tableName) {
       string sql = string.Format("DROP TABLE {0}", tableName);
-      var Model = new PGTable<dynamic>(_connectionStringName);
+      var Model = new SQLServerTable<dynamic>(_connectionStringName);
       Model.Execute(sql);
     }
 
@@ -91,7 +90,7 @@ namespace Biggy.Perf.PGDocuments {
           + "WHERE TABLE_SCHEMA = 'dbo' "
           + "AND  TABLE_NAME = '{0}'";
       string sql = string.Format(select, tableName);
-      var Model = new PGTable<dynamic>(_connectionStringName);
+      var Model = new SQLServerTable<dynamic>(_connectionStringName);
       var query = Model.Query<dynamic>(sql);
       if (query.Count() > 0) {
         exists = true;

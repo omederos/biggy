@@ -44,12 +44,11 @@
   <ItemGroup>
     <Compile Include="FileStore\Benchmarks.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="MassiveTasks.cs" />
     <Compile Include="PGDocuments\Benchmarks.cs" />
     <Compile Include="PGList\Benchmarks.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SQLDocument\Benchmark.cs" />
+    <Compile Include="SQLDocument\Benchmarks.cs" />
     <Compile Include="SQLList\Benchmarks.cs" />
   </ItemGroup>
   <ItemGroup>

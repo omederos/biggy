@@ -23,7 +23,7 @@ namespace Biggy.Perf {
       Console.WriteLine("**********************************************");
       PGList.Benchmarks.Run();
       Console.WriteLine("**********************************************");
-      SQLDocument.Benchmark.Run();
+      SQLDocument.Benchmarks.Run();
       Console.WriteLine("**********************************************");
       SQLList.Benchmarks.Run();
       Console.WriteLine("**********************************************");

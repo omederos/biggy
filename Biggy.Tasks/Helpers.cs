@@ -8,68 +8,68 @@ namespace Biggy.Perf {
 
   class Track {
     public int TrackID { get; set; }
+    public int AlbumId { get; set; }
     public string Name { get; set; }
     public string Composer { get; set; }
     public decimal UnitPrice { get; set; }
   }
+
+  class Artist {
+    public int ArtistId { get; set; }
+    public string Name { get; set; }
+  }
+
+  class Album {
+    public int AlbumId { get; set; }
+    public string Title { get; set; }
+    public int ArtistId { get; set; }
+  }
+
+  public class Customer {
+    public int CustomerId { get; set; }
+    public string LastName { get; set; }
+    public string FirstName { get; set; }
+    public string Email { get; set; }
+  }
+
 
   public class Film {
     [PrimaryKey]
     public int Film_ID { get; set; }
     public string Title { get; set; }
     public string Description { get; set; }
-    public DateTime ReleaseYear { get; set; }
+    public int ReleaseYear { get; set; }
     public int Length { get; set; }
 
     [FullText]
     public string FullText { get; set; }
   }
 
-  //this is here as a bit of a playground... playing with the API etc...
-  class NWProduct {
-    public Guid Sku { get; set; }
-    public String ProductName { get; set; }
-    public Decimal UnitPrice { get; set; }
 
-    public override bool Equals(object obj) {
-      var p1 = (Product)obj;
-      return this.Sku.Equals(p1.Sku);
-    }
-
-  }
-  class OrderDetail {
-    public decimal UnitPrice { get; set; }
-    public int Quantity { get; set; }
-    public int OrderDetailID { get; set; }
-  }
-
-  class Product {
-    public String Sku { get; set; }
-    public String Name { get; set; }
-    public Decimal Price { get; set; }
-    public DateTime CreatedAt { get; set; }
-
-    public Product() {
-      this.CreatedAt = DateTime.Now;
-    }
-
-    public override bool Equals(object obj) {
-      var p1 = (Product)obj;
-      return this.Sku == p1.Sku;
-    }
-
-  }
-
-  class Actor {
+  public class MonkeyDocument {
     [PrimaryKey]
-    public int Actor_ID { get; set; }
-    public string First_Name { get; set; }
-    public string Last_Name { get; set; }
-    public string FullName {
-      get {
-        return this.First_Name + " " + this.Last_Name;
-      }
-    }
+    public string Name { get; set; }
+    public DateTime Birthday { get; set; }
+    [FullText]
+    public string Description { get; set; }
+  }
+
+  // Use this against a temp Clients table when doing destructive
+  // or other operations to avoid blowing up the serial PK and/or
+  // ditching the Chinook Data:
+  public class Client {
+    public int ClientId { get; set; }
+    public string LastName { get; set; }
+    public string FirstName { get; set; }
+    public string Email { get; set; }
+  }
+
+
+  public class ClientDocument {
+    public int ClientDocumentId { get; set; }
+    public string LastName { get; set; }
+    public string FirstName { get; set; }
+    public string Email { get; set; }
   }
 
   class Monkey {
