@@ -14,8 +14,6 @@ using Biggy.Extensions;
 
 namespace Biggy
 {
-
-
   /// <summary>
   /// A class that wraps your database table in Dynamic Funtime
   /// </summary>
@@ -23,7 +21,32 @@ namespace Biggy
     
     protected string ConnectionString;
 
+    /// <summary>
+    /// Returns an Open Connection
+    /// </summary>
+    internal abstract DbConnection OpenConnection();
+    protected abstract string BuildSelect(string where, string orderBy = "", int limit = 0);
+    protected abstract string GetSingleSelect(string where);
+    public abstract string GetInsertReturnValueSQL();
     protected abstract string DbDelimiterFormatString { get; }
+
+
+    public virtual string DelimitedTableName {
+      get {
+        return string.Format(this.DbDelimiterFormatString, this.TableName);
+      }
+    }
+
+    public string DelimitedPkColumnName {
+      get {
+        return string.Format(this.DbDelimiterFormatString, this.PrimaryKeyField);
+      }
+    }
+    public virtual DbColumnMapping PrimaryKeyMapping { get; set; }
+    public virtual string PrimaryKeyField { get; set; }
+    public virtual bool PkIsIdentityColumn { get; set; }
+    public virtual string TableName { get; set; }
+    public string DescriptorField { get; protected set; }
     public virtual DbColumnMappingLookup PropertyColumnMappings { get; private set; }
     protected void mapDbColumns()
     {
@@ -126,23 +149,6 @@ namespace Biggy
       }
     }
 
-    public virtual string DelimitedTableName {
-      get {
-        return string.Format(this.DbDelimiterFormatString, this.TableName);
-      }
-    }
-
-    public string DelimitedPkColumnName {
-      get {
-        return string.Format(this.DbDelimiterFormatString, this.PrimaryKeyField);
-      }
-    }
-
-    public virtual string PrimaryKeyField { get; set; }
-    public virtual bool PkIsIdentityColumn { get; set; }
-    public virtual string TableName { get; set; }
-
-    public string DescriptorField { get; protected set; }
 
 
     public IEnumerable<T> Where(string where, params object[] args) {
@@ -227,10 +233,7 @@ namespace Biggy
       return result;
     }
 
-    /// <summary>
-    /// Returns and OpenConnection
-    /// </summary>
-    internal abstract DbConnection OpenConnection();
+
 
     /// <summary>
     /// Builds a set of Insert and Update commands based on the passed-on objects.
@@ -286,9 +289,6 @@ namespace Biggy
       return Query<T>(formatted, args);
     }
 
-    protected abstract string BuildSelect(string where, string orderBy="", int limit=0);
-
-    protected abstract string GetSingleSelect(string where);
     /// <summary>
     /// Returns a single row from the database
     /// </summary>
@@ -421,7 +421,6 @@ namespace Biggy
     //Temporary holder for error messages
     public IList<string> Errors = new List<string>();
 
-    public abstract string GetInsertReturnValueSQL();
 
     public T Insert (T item) {
       if (BeforeSave(item)) {
