@@ -48,8 +48,8 @@ namespace Biggy
     public virtual string TableName { get; set; }
     public string DescriptorField { get; protected set; }
     public virtual DbColumnMappingLookup PropertyColumnMappings { get; private set; }
-    protected void mapDbColumns()
-    {
+
+    protected void mapDbColumns() {
       var columnNames = this.getTableColumns();
       if (this.PropertyColumnMappings == null) {
         this.PropertyColumnMappings = new DbColumnMappingLookup(this.DbDelimiterFormatString);
@@ -59,27 +59,42 @@ namespace Biggy
       string replaceString = "[^a-zA-Z1-9]";
       var rgx = new Regex(replaceString);
 
-      foreach (var property in props) {
-        string propertyName = rgx.Replace(property.Name.ToLower(), "");
-        string columnName = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == propertyName);
+      if(columnNames.Count > 0) {
+        // Do this only once, instead of inside the loop below:
+        var pkProperty = props.FirstOrDefault(p => p.GetCustomAttributes(false).Any(a => a.GetType() == typeof(PrimaryKeyAttribute)));
+        PrimaryKeyAttribute pkAttribute = null;
+        if (pkProperty != null) {
+          pkAttribute = pkProperty.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(PrimaryKeyAttribute)) as PrimaryKeyAttribute;
+        }
 
-        // Hateful as this is, if we allow setting of attributes, we need to check for those FIRST,
-        // otherwise the client will be confused by inconsistent behavior. 
-        DbColumnNameAttribute mappedColumnAttribute = null;
-        var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnNameAttribute));
-        if (attribute != null) {
-          // Use the column name found in the attribute:
-          mappedColumnAttribute = attribute as DbColumnNameAttribute;
-          columnName = mappedColumnAttribute.Name;
-          this.PropertyColumnMappings.Add(columnName, property.Name);
-        } else {
-          if (!string.IsNullOrWhiteSpace(columnName)) {
-            this.PropertyColumnMappings.Add(columnName, property.Name);
+        foreach (var property in props) {
+          string propertyName = rgx.Replace(property.Name.ToLower(), "");
+          string columnName = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == propertyName);
+
+          // Hateful as this is, if we allow setting of attributes, we need to check for those FIRST,
+          // otherwise the client will be confused by inconsistent behavior. 
+          DbColumnAttribute mappedColumnAttribute = null;
+          var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnAttribute));
+          if (attribute != null) {
+            // Use the column name found in the attribute:
+            mappedColumnAttribute = attribute as DbColumnAttribute;
+            columnName = mappedColumnAttribute.Name;
+          } 
+          if (!string.IsNullOrWhiteSpace(columnName)){
+            this.PrimaryKeyMapping = this.PropertyColumnMappings.Add(columnName, property.Name);
+            // If this is the PK Property/Column, set those values:
+            if (ReferenceEquals(pkProperty, property)){
+              pkAttribute = pkProperty.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(PrimaryKeyAttribute)) as PrimaryKeyAttribute;
+              this.PrimaryKeyMapping.IsPrimaryKey = true;
+              this.PrimaryKeyMapping.IsAutoIncementing = pkAttribute.IsAutoIncrementing;
+
+              //this.PrimaryKeyField = PrimaryKeyMapping.ColumnName;
+              //this.PkIsIdentityColumn = PrimaryKeyMapping.IsAutoIncementing;
+            }
           }
         }
       }
     }
-
 
     protected virtual List<string> getTableColumns() {
       var result = new List<string>();
@@ -102,7 +117,7 @@ namespace Biggy
       this.mapDbColumns();
 
     }
-
+    
     public DBTable(string connectionStringName, string tableName = "",
       string primaryKeyField = "", bool pkIsIdentityColumn = true)
     {
