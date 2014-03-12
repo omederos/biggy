@@ -40,7 +40,6 @@ namespace Biggy.Postgres {
       if (limit > 0) {
         sql += " LIMIT " + limit;
       }
-
       return sql;
     }
     protected override string GetSingleSelect(string where) {
@@ -65,23 +64,17 @@ namespace Biggy.Postgres {
       //we're looking for a PGFullText attribute
       string columnName = null;
 
-      //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
-      //I think it's because of assembly issues?
-      foreach (var prop in props) {
-        foreach (var att in prop.CustomAttributes) {
-          if(att.AttributeType == typeof(FullTextAttribute)){
-            columnName = prop.Name;
-            break;
-          }
-        }
+      var foundProp = props
+        .FirstOrDefault(p => p.GetCustomAttributes(false)
+          .Any(a => a.GetType() == typeof(FullTextAttribute)));
+      if(foundProp != null) {
+        columnName = foundProp.Name;
       }
-      
       if(columnName == null){
         throw new InvalidOperationException("Can't find a PGFullText attribute on " + typeof(T).Name + " - please be sure to add that");
       }
       var sql = string.Format("select *, ts_rank_cd({2},to_tsquery(@0)) as rank from {1} where {2} @@ to_tsquery(@0) order by rank DESC;",query,this.DelimitedTableName,columnName);
       return Query<T>(sql, query);
-
     }
 
     protected override string DbDelimiterFormatString {
