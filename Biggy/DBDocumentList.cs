@@ -30,7 +30,8 @@ namespace Biggy {
       var pkIsIdentity = this.PrimaryKeyType == typeof(int);
       SetModel();
       // We need to explicitly map the column names because the object type is dynamic:
-      Model.PropertyColumnMappings.Add(this.PrimaryKeyField, this.PrimaryKeyField);
+      Model.PrimaryKeyMapping = Model.PropertyColumnMappings.Add(this.PrimaryKeyField, this.PrimaryKeyField);
+      Model.PrimaryKeyMapping.IsAutoIncementing = this.PKIsIdentity;
       Model.PropertyColumnMappings.Add("body", "body");
       Model.PropertyColumnMappings.Add("search", "search");
       TryLoadData();
