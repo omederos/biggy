@@ -18,7 +18,7 @@ namespace Biggy.SQLServer {
     }
 
     public override void SetModel() {
-      this.Model = new SQLServerTable<dynamic>(this.ConnectionStringName,tableName:this.TableName,primaryKeyField:this.PrimaryKeyField, pkIsIdentityColumn: this.PKIsIdentity);
+      this.Model = new SQLServerTable<dynamic>(this.ConnectionStringName,tableName:this.TableName);
     }
 
     /// <summary>
@@ -36,7 +36,7 @@ namespace Biggy.SQLServer {
         if (x.Message.Contains("Invalid object name")) {
 
           //create the table
-          var idType = this.PrimaryKeyType == typeof(int) ? " int identity(1,1)" : "nvarchar(255)";
+          var idType = Model.PrimaryKeyMapping.DataType == typeof(int) ? " int identity(1,1)" : "nvarchar(255)";
           string fullTextColumn = "";
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search nvarchar(MAX)";
@@ -59,7 +59,7 @@ namespace Biggy.SQLServer {
     /// <param name="item"></param>
     public override void Add(T item) {
       this.addItem(item);
-      if (PKIsIdentity) {
+      if (Model.PrimaryKeyMapping.IsAutoIncementing) {
         // Sync the JSON ID with the serial PK:
         var ex = this.SetDataForDocument(item);
         this.Update(item);
@@ -73,7 +73,7 @@ namespace Biggy.SQLServer {
       var args = new List<object>();
       var index = 0;
 
-      var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
+      var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(Model.PrimaryKeyMapping.PropertyName, StringComparison.OrdinalIgnoreCase));
       if (this.Model.PrimaryKeyMapping.IsAutoIncementing) {
         //don't update the Primary Key
         dc.Remove(keyColumn);
@@ -98,7 +98,7 @@ namespace Biggy.SQLServer {
       this.Remove(item);
 
       var props = item.GetType().GetProperties();
-      var pk = props.First(p => p.Name == this.PrimaryKeyField);
+      var pk = props.First(p => p.Name == Model.PrimaryKeyMapping.PropertyName);
       return (int)pk.GetValue(item) + 1;
     }
 
@@ -115,7 +115,7 @@ namespace Biggy.SQLServer {
 
       // We need to add and remove an item to get the starting serial pk:
       int nextSerialPk = 0;
-      if (this.PKIsIdentity) {
+      if (Model.PrimaryKeyMapping.IsAutoIncementing) {
         // HACK: This is SO bad, but don't see ANY other way to do this:
         nextSerialPk = this.getNextSerialPk(first);
       }
@@ -135,9 +135,9 @@ namespace Biggy.SQLServer {
           var rowValueCounter = 0;
           foreach (var item in items) {
             // Set the soon-to-be inserted serial int value:
-            if (this.PKIsIdentity) {
+            if (Model.PrimaryKeyMapping.IsAutoIncementing) {
               var props = item.GetType().GetProperties();
-              var pk = props.First(p => p.Name == this.PrimaryKeyField);
+              var pk = props.First(p => p.Name == Model.PrimaryKeyMapping.PropertyName);
               pk.SetValue(item, nextSerialPk);
               nextSerialPk++;
             }

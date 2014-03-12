@@ -74,6 +74,7 @@ namespace Biggy
             columnName = mappedColumnAttribute.Name;
           } 
           var newMapping = this.PropertyColumnMappings.Add(columnName, property.Name);
+          newMapping.DataType = property.GetType();
           if (!string.IsNullOrWhiteSpace(columnName)){
             if (ReferenceEquals(pkProperty, property)){
               this.PrimaryKeyMapping = newMapping;

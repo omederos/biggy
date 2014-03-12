@@ -8,12 +8,14 @@ using System.Dynamic;
 using Newtonsoft.Json;
 namespace Biggy {
   public abstract class DBDocumentList<T> : InMemoryList<T> where T : new() {
-    
+
+    // Keep these private and push the derived class references down to the Model:
+    private string PrimaryKeyField { get; set; }
+    private Type PrimaryKeyType { get; set; }
+    private bool PKIsIdentity { get; set; }
+
     public string TableName { get; set; }
     public DBTable<dynamic> Model { get; set; }
-    public string PrimaryKeyField { get; set; }
-    public Type PrimaryKeyType { get; set; }
-    public bool PKIsIdentity { get; set; }
     public string[] FullTextFields { get; set; }
     public string ConnectionStringName { get; set; }
 
@@ -32,6 +34,8 @@ namespace Biggy {
       // We need to explicitly map the column names because the object type is dynamic:
       Model.PrimaryKeyMapping = Model.PropertyColumnMappings.Add(this.PrimaryKeyField, this.PrimaryKeyField);
       Model.PrimaryKeyMapping.IsAutoIncementing = this.PKIsIdentity;
+      Model.PrimaryKeyMapping.DataType = this.PrimaryKeyType;
+
       Model.PropertyColumnMappings.Add("body", "body");
       Model.PropertyColumnMappings.Add("search", "search");
       TryLoadData();
@@ -57,8 +61,12 @@ namespace Biggy {
 
       if (conventionalKey == null) {
         //HACK: This is horrible... but it works. Attribute.GetCustomAttribute doesn't work for some reason
-        //I think it's because of assembly issues?
-        var foundProp = new T().LookForCustomAttribute(typeof(PrimaryKeyAttribute)).FirstOrDefault();
+        //I think it's because of assembly issues? JA 3/11/2014 - Works here . . . maybe you forgot to use false for the 
+        // Inherit flag??
+        var foundProp = props
+          .FirstOrDefault(p => p.GetCustomAttributes(false)
+            .Any(a => a.GetType() == typeof(PrimaryKeyAttribute)));
+
         if(foundProp != null){
           this.PrimaryKeyField = foundProp.Name;
           this.PrimaryKeyType = foundProp.PropertyType;

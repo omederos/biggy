@@ -16,6 +16,7 @@ namespace Biggy
     }
     public bool IsAutoIncementing { get; set; }
     public bool IsPrimaryKey { get; set; }
+    public Type DataType { get; set; }
     public string ColumnName { get; protected set; }
     public string PropertyName { get; protected set; }
     public string DelimitedColumnName { get; protected set; }
