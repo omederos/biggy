@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace Biggy.Perf {
 
   class Track {
+    [PrimaryKey]
     public int TrackID { get; set; }
     public int AlbumId { get; set; }
     public string Name { get; set; }
@@ -15,17 +16,20 @@ namespace Biggy.Perf {
   }
 
   class Artist {
+    [PrimaryKey]
     public int ArtistId { get; set; }
     public string Name { get; set; }
   }
 
   class Album {
+    [PrimaryKey]
     public int AlbumId { get; set; }
     public string Title { get; set; }
     public int ArtistId { get; set; }
   }
 
   public class Customer {
+    [PrimaryKey]
     public int CustomerId { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }
@@ -47,7 +51,7 @@ namespace Biggy.Perf {
 
 
   public class MonkeyDocument {
-    [PrimaryKey]
+    [PrimaryKey(Auto: false)]
     public string Name { get; set; }
     public DateTime Birthday { get; set; }
     [FullText]
@@ -58,6 +62,7 @@ namespace Biggy.Perf {
   // or other operations to avoid blowing up the serial PK and/or
   // ditching the Chinook Data:
   public class Client {
+    [PrimaryKey]
     public int ClientId { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }
@@ -66,6 +71,7 @@ namespace Biggy.Perf {
 
 
   public class ClientDocument {
+    [PrimaryKey]
     public int ClientDocumentId { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }

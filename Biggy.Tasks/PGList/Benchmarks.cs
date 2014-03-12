@@ -22,7 +22,8 @@ namespace Biggy.Perf.PGList
 
       Console.WriteLine("Loading up Artists from Chinook...");
       sw.Start();
-      var _artists = new PGList<Artist>(_connectionStringName, "artist", "artist_id");
+      var _artists = new PGList<Artist>(_connectionStringName, "artist");
+
       sw.Stop();
       Console.WriteLine("\tLoaded {0} Artist records in {1} ms", _artists.Count(), sw.ElapsedMilliseconds);
 
@@ -30,7 +31,7 @@ namespace Biggy.Perf.PGList
       Console.WriteLine("Loading up Albums from Chinook...");
       sw.Reset();
       sw.Start();
-      var _albums = new PGList<Album>(_connectionStringName, "album", "album_id");
+      var _albums = new PGList<Album>(_connectionStringName, "album");
       sw.Stop();
       Console.WriteLine("\tLoaded {0} Albums in {1} ms", _artists.Count(), sw.ElapsedMilliseconds);
 
@@ -38,7 +39,7 @@ namespace Biggy.Perf.PGList
       Console.WriteLine("Loading up tracks from Chinook...");
       sw.Reset();
       sw.Start();
-      var _tracks = new PGList<Track>(_connectionStringName, "track", "track_id");
+      var _tracks = new PGList<Track>(_connectionStringName, "track");
       sw.Stop();
       Console.WriteLine("\tLoaded {0} Tracks in {1} ms", _tracks.Count(), sw.ElapsedMilliseconds);
 
@@ -79,7 +80,7 @@ namespace Biggy.Perf.PGList
       sw.Reset();
       Console.WriteLine("Loading up customers from Chinook...");
       sw.Start();
-      var customers = new PGList<Customer>(_connectionStringName, "customer", "customer_id");
+      var customers = new PGList<Customer>(_connectionStringName, "customer");
       sw.Stop();
       Console.WriteLine("\tLoaded {0} records in {1}ms", customers.Count(), sw.ElapsedMilliseconds);
 
@@ -118,7 +119,7 @@ namespace Biggy.Perf.PGList
       sw.Reset();
       int INSERT_QTY = 10000;
       Console.WriteLine("BULK INSERTING  {0} client records in Chinook...", INSERT_QTY);
-      var _clients = new PGList<Client>(_connectionStringName, "clients", "client_id");
+      var _clients = new PGList<Client>(_connectionStringName, "clients");
 
       var inserts = new List<Client>();
       for (int i = 0; i < INSERT_QTY; i++)
@@ -133,7 +134,7 @@ namespace Biggy.Perf.PGList
       sw.Reset();
       Console.WriteLine("Loading up Bulk inserted CLients from Chinook...");
       sw.Start();
-      _clients = new PGList<Client>(_connectionStringName, "clients", "client_id");
+      _clients = new PGList<Client>(_connectionStringName, "clients");
       sw.Stop();
       Console.WriteLine("\tLoaded {0} records in {1}ms", _clients.Count(), sw.ElapsedMilliseconds);
 
