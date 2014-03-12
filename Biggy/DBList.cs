@@ -29,16 +29,38 @@ namespace Biggy {
         this.TableName = tableName;
       } else {
         var thingyType = this.GetType().GenericTypeArguments[0].Name;
-        this.TableName = Inflector.Inflector.Pluralize(thingyType).ToLower();
+        if (thingyType == "Object")
+        {
+            //this is DYNAMIC so set a DYNAMIC flag
+            this.TableName = "DYNAMIC";
+        }
+        else
+        {
+            this.TableName = Inflector.Inflector.Pluralize(thingyType).ToLower();
+        }
       }
     }
     public IEnumerable<T> Query(string sql, params object[] args) {
-      return this.Model.Query<T>(sql, args);
+        var results = this.Model.Query<T>(sql, args);
+        //HACK: formalize this 
+        if (this.TableName == "DYNAMIC")
+        {
+            _items = results.ToList();
+        }
+        return results;
     }
 
 
     public void Reload() {
-      _items = this.Model.All<T>().ToList();
+        if (this.TableName != "DYNAMIC")
+        {
+            _items = this.Model.All<T>().ToList();
+
+        }
+        else
+        {
+            //we'll load the items at first run
+        }
     }
 
     public int Update(T item) {
