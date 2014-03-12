@@ -13,15 +13,13 @@ namespace Biggy.Postgres {
   public class PGTable<T> : DBTable<T> where T : new() {
 
 
-    public PGTable(string connectionStringName,string primaryKeyField)
-      : base(connectionStringName, primaryKeyField) { }
+    public PGTable(string connectionStringName)
+      : base(connectionStringName) { }
 
 
     public PGTable(string connectionStringName,
-      string tableName = "",
-      string primaryKeyField = "id",
-      bool pkIsIdentityColumn = true)
-      : base(connectionStringName, tableName, primaryKeyField, pkIsIdentityColumn) { }
+      string tableName = "")
+      : base(connectionStringName, tableName) { }
 
 
     internal override DbConnection OpenConnection() {
@@ -49,7 +47,7 @@ namespace Biggy.Postgres {
       return string.Format("SELECT * FROM {0} WHERE {1} LIMIT 1", this.DelimitedTableName, where);
     }
     public override string GetInsertReturnValueSQL() {
-      return " RETURNING " + this.DelimitedPkColumnName + " as newId";
+      return " RETURNING " + this.PrimaryKeyMapping.DelimitedColumnName + " as newId";
     }
 
     public IEnumerable<T> FullTextOnTheFly(string query, params string[] columns) {

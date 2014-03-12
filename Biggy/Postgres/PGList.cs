@@ -15,11 +15,11 @@ namespace Biggy.Postgres {
     }
 
     public override void SetModel() {
-      this.Model = new PGTable<T>(this.ConnectionStringName, this.TableName, this.PrimaryKeyField);
+      this.Model = new PGTable<T>(this.ConnectionStringName, this.TableName);
     }
 
-    public PGList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") :
-      base(connectionStringName, tableName, primaryKeyName) { }
+    public PGList(string connectionStringName, string tableName = "guess") :
+      base(connectionStringName, tableName) { }
     
     //custom PG goodies
     public IEnumerable<T> FullTextOnTheFly(string query, params string[] columns) {

@@ -9,14 +9,14 @@ using System.Dynamic;
 namespace Biggy.SQLServer {
   public class SQLServerTable<T> : DBTable<T> where T: new() {
 
-    public SQLServerTable(string connectionStringName, string primaryKeyField)
-      : base(connectionStringName, primaryKeyField) { }
+    public SQLServerTable(string connectionStringName)
+      : base(connectionStringName) { }
 
     public SQLServerTable(string connectionStringName,
       string tableName = "",
       string primaryKeyField = "",
       bool pkIsIdentityColumn = true)
-      : base(connectionStringName, tableName, primaryKeyField, pkIsIdentityColumn) { }
+      : base(connectionStringName, tableName) { }
 
     internal override System.Data.Common.DbConnection OpenConnection() {
       var conn = new SqlConnection(this.ConnectionString);
@@ -58,10 +58,10 @@ namespace Biggy.SQLServer {
       if (!string.IsNullOrEmpty(sql))
         countSQL = string.Format("SELECT COUNT({0}) FROM ({1}) AS PagedTable", primaryKeyField, sql);
       else
-        countSQL = string.Format("SELECT COUNT({0}) FROM {1}", PrimaryKeyField, TableName);
+        countSQL = string.Format("SELECT COUNT({0}) FROM {1}", this.PrimaryKeyMapping.ColumnName, TableName);
 
       if (String.IsNullOrEmpty(orderBy)) {
-        orderBy = string.IsNullOrEmpty(primaryKeyField) ? PrimaryKeyField : primaryKeyField;
+        orderBy = string.IsNullOrEmpty(primaryKeyField) ? this.PrimaryKeyMapping.ColumnName : primaryKeyField;
       }
 
       if (!string.IsNullOrEmpty(where)) {

@@ -16,10 +16,10 @@ namespace Biggy.SQLServer {
     }
 
     public override void SetModel() {
-      this.Model = new SQLServerTable<T>(this.ConnectionStringName, this.TableName, this.PrimaryKeyField);
+      this.Model = new SQLServerTable<T>(this.ConnectionStringName, this.TableName);
     }
 
-    public SQLServerList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") :
-      base(connectionStringName, tableName, primaryKeyName) { }
+    public SQLServerList(string connectionStringName, string tableName = "guess") :
+      base(connectionStringName, tableName) { }
   }
 }
