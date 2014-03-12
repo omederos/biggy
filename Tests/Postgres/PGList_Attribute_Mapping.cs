@@ -21,7 +21,7 @@ namespace Tests.Postgres
     public PGList_Attribute_Mapping() {
       // Set up a table with mangled column names:
       this.SetUpWTFTable();
-      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf", "CLient_Id");
+      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf");
 	  }
 
 
@@ -48,7 +48,7 @@ namespace Tests.Postgres
       };
       _MismatchedClients.Add(newMonkey);
       int newID = newMonkey.Id;
-      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf", "CLient_Id");
+      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf");
       var found = _MismatchedClients.FirstOrDefault(c => c.Id == newID);
       Assert.True(found.Id == newID && _MismatchedClients.Count > initialCount);
     }
@@ -64,7 +64,7 @@ namespace Tests.Postgres
       _MismatchedClients.Add(newMonkey);
       int currentCount = _MismatchedClients.Count;
       int newID = newMonkey.Id;
-      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf", "CLient_Id");
+      _MismatchedClients = new PGList<MismatchedClient>(_connectionStringName, "wtf");
       var found = _MismatchedClients.FirstOrDefault(c => c.Id == newID);
       found.First = "Mick";
       _MismatchedClients.Update(found);

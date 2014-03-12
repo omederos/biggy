@@ -30,6 +30,7 @@ namespace Tests {
 
 
   public class Client {
+    [PrimaryKey]
     public int ClientId { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }
@@ -38,6 +39,7 @@ namespace Tests {
 
 
   public class ClientDocument {
+    [PrimaryKey]
     public int ClientDocumentId { get; set; }
     public string LastName { get; set; }
     public string FirstName { get; set; }
@@ -46,13 +48,14 @@ namespace Tests {
 
 
   class MismatchedClient {
-    [DbColumnName("CLient_Id")]
+    [PrimaryKey]
+    [DbColumn("CLient_Id")]
     public int Id { get; set; }
-    [DbColumnName("Last Name")]
+    [DbColumn("Last Name")]
     public string Last { get; set; }
-    [DbColumnName("first_name")]
+    [DbColumn("first_name")]
     public string First { get; set; }
-    [DbColumnName("Email")]
+    [DbColumn("Email")]
     public string EmailAddress { get; set; }
   }
 }

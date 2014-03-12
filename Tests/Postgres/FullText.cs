@@ -12,7 +12,7 @@ namespace Tests.Postgres {
 
     PGList<Film> films;
     public PGFullText() {
-      films = new PGList<Film>("chinookPG", "film", "film_id");
+      films = new PGList<Film>("chinookPG", "film");
     }
 
     [Fact(DisplayName = "Ad hoc TS Vector Query Returns Films")]

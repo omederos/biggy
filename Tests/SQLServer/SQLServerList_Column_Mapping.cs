@@ -20,7 +20,7 @@ namespace Tests.SQLServer
     public SQLServerList_Column_Mapping() {
       // Set up a table with mangled column names:
       this.SetUpWTFTable();
-      _clients = new SQLServerList<Client>(_connectionStringName, "WTF", "Client_Id");
+      _clients = new SQLServerList<Client>(_connectionStringName, "WTF");
 	  }
 
 
@@ -47,7 +47,7 @@ namespace Tests.SQLServer
       };
       _clients.Add(newMonkey);
       int newID = newMonkey.ClientId;
-      _clients = new SQLServerList<Client>(_connectionStringName, "WTF", "Client_Id");
+      _clients = new SQLServerList<Client>(_connectionStringName, "WTF");
       var found = _clients.FirstOrDefault(c => c.ClientId == newID);
       Assert.True(found.ClientId == newID && _clients.Count > initialCount);
     }
@@ -63,7 +63,7 @@ namespace Tests.SQLServer
       _clients.Add(newMonkey);
       int currentCount = _clients.Count;
       int newID = newMonkey.ClientId;
-      _clients = new SQLServerList<Client>(_connectionStringName, "WTF", "Client_Id");
+      _clients = new SQLServerList<Client>(_connectionStringName, "WTF");
       var found = _clients.FirstOrDefault(c => c.ClientId == newID);
       found.FirstName = "Mick";
       _clients.Update(found);

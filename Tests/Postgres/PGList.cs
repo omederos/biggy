@@ -18,7 +18,7 @@ namespace Tests.Postgres {
     public PGList_CRUD() {
       // Drops and re-creates table each time:
       this.SetUpClientTable();
-      _Clients = new PGList<Client>(connectionStringName: _connectionStringName, tableName: "clients", primaryKeyName: "client_id");
+      _Clients = new PGList<Client>(connectionStringName: _connectionStringName, tableName: "clients");
     }
 
 
@@ -35,7 +35,7 @@ namespace Tests.Postgres {
       var newClient = new Client() { FirstName = "John", LastName = "Atten", Email = "jatten@example.com" };
       _Clients.Add(newClient);
       int idToFind = newClient.ClientId;
-      _Clients = new PGList<Client>(connectionStringName: _connectionStringName, tableName: "clients", primaryKeyName: "client_id");
+      _Clients = new PGList<Client>(connectionStringName: _connectionStringName, tableName: "clients");
       var found = _Clients.FirstOrDefault(c => c.ClientId == idToFind);
       Assert.True(found.Email == "jatten@example.com" && _Clients.Count > initialCount);
     }

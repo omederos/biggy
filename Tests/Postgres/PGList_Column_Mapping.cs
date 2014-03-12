@@ -20,7 +20,7 @@ namespace Tests.Postgres
     public PGList_Column_Mapping() {
       // Set up a table with mangled column names:
       this.SetUpWTFTable();
-      _clients = new PGList<Client>(_connectionStringName, "wtf", "CLient_Id");
+      _clients = new PGList<Client>(_connectionStringName, "wtf");
 	  }
 
 
@@ -49,7 +49,7 @@ namespace Tests.Postgres
       int newID = newMonkey.ClientId;
 
       // Reload from scratch to be sure:
-      _clients = new PGList<Client>(_connectionStringName, "wtf", "CLient_Id");
+      _clients = new PGList<Client>(_connectionStringName, "wtf");
       var found = _clients.FirstOrDefault(c => c.ClientId == newID);
       Assert.True(found.ClientId == newID && _clients.Count > initialCount);
     }
@@ -67,7 +67,7 @@ namespace Tests.Postgres
       int newID = newMonkey.ClientId;
 
       // Reload from scratch to be sure:
-      _clients = new PGList<Client>(_connectionStringName, "wtf", "CLient_Id");
+      _clients = new PGList<Client>(_connectionStringName, "wtf");
       var found = _clients.FirstOrDefault(c => c.ClientId == newID);
       found.FirstName = "Mick";
       _clients.Update(found);

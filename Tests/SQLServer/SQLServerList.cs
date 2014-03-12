@@ -19,7 +19,7 @@ namespace Tests.SQLServer
     public SQLServerList_CRUD() {
       // Drops and re-creates table each time:
       this.SetUpClientTable();
-      _Clients = new SQLServerList<Client>(connectionStringName: _connectionStringName, tableName: "Clients", primaryKeyName: "ClientId");
+      _Clients = new SQLServerList<Client>(connectionStringName: _connectionStringName, tableName: "Clients");
     }
 
 
@@ -36,7 +36,7 @@ namespace Tests.SQLServer
       var newClient = new Client() { FirstName = "John", LastName = "Atten", Email = "jatten@example.com" };
       _Clients.Add(newClient);
       int idToFind = newClient.ClientId;
-      _Clients = new SQLServerList<Client>(connectionStringName: _connectionStringName, tableName: "Clients", primaryKeyName: "ClientId");
+      _Clients = new SQLServerList<Client>(connectionStringName: _connectionStringName, tableName: "Clients");
       var found = _Clients.FirstOrDefault(c => c.ClientId == idToFind);
       Assert.True(found.Email == "jatten@example.com" && _Clients.Count > initialCount);
     }
