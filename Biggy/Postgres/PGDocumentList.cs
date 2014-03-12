@@ -25,7 +25,7 @@ namespace Biggy.Postgres {
     }
 
     public override void SetModel() {
-      this.Model = new PGTable<dynamic>(this.ConnectionStringName,tableName:this.TableName,primaryKeyField:this.PrimaryKeyField, pkIsIdentityColumn: this.PKIsIdentity);
+      this.Model = new PGTable<dynamic>(this.ConnectionStringName,tableName:this.TableName);
     }
     internal override void TryLoadData() {
       try {
@@ -39,7 +39,7 @@ namespace Biggy.Postgres {
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search tsvector";
           }
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", Model.DelimitedTableName, Model.DelimitedPkColumnName, idType, fullTextColumn);
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body json not null {3});", Model.DelimitedTableName, Model.PrimaryKeyMapping.DelimitedColumnName, idType, fullTextColumn);
           this.Model.Execute(sql);
           TryLoadData();
         } else {
@@ -69,7 +69,7 @@ namespace Biggy.Postgres {
       var index = 0;
 
       var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-      if (this.Model.PkIsIdentityColumn) {
+      if (this.Model.PrimaryKeyMapping.IsAutoIncementing) {
         //don't update the Primary Key
         dc.Remove(keyColumn);
       }
@@ -83,7 +83,7 @@ namespace Biggy.Postgres {
         index++;
       }
       var sb = new StringBuilder();
-      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", Model.DelimitedTableName, string.Join(",", dc.Keys), string.Join(",", vals), Model.DelimitedPkColumnName);
+      sb.AppendFormat("INSERT INTO {0} ({1}) VALUES ({2}) RETURNING {3} as newID;", Model.DelimitedTableName, string.Join(",", dc.Keys), string.Join(",", vals), Model.PrimaryKeyMapping.DelimitedColumnName);
       var sql = sb.ToString();
       var newKey = this.Model.Scalar(sql, args.ToArray());
       //set the key

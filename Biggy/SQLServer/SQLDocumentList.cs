@@ -41,7 +41,7 @@ namespace Biggy.SQLServer {
           if (this.FullTextFields.Length > 0) {
             fullTextColumn = ", search nvarchar(MAX)";
           }
-          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", Model.DelimitedTableName, Model.DelimitedPkColumnName, idType, fullTextColumn);
+          var sql = string.Format("CREATE TABLE {0} ({1} {2} primary key not null, body nvarchar(MAX) not null {3});", Model.DelimitedTableName, Model.PrimaryKeyMapping.DelimitedColumnName, idType, fullTextColumn);
           this.Model.Execute(sql);
           //if (this.FullTextFields.Length > 0) {
           //  var indexSQL = string.Format("CREATE FULL TEXT INDEX ON {0}({1})",this.TableName,string.Join(",",this.FullTextFields));
@@ -74,7 +74,7 @@ namespace Biggy.SQLServer {
       var index = 0;
 
       var keyColumn = dc.FirstOrDefault(x => x.Key.Equals(this.PrimaryKeyField, StringComparison.OrdinalIgnoreCase));
-      if (this.Model.PkIsIdentityColumn) {
+      if (this.Model.PrimaryKeyMapping.IsAutoIncementing) {
         //don't update the Primary Key
         dc.Remove(keyColumn);
       }
