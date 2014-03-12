@@ -9,15 +9,15 @@ namespace Biggy {
   public abstract class DBList<T> : InMemoryList<T> where T : new(){
 
     public string TableName { get; set; }
-    public string PrimaryKeyField { get; set; }
+    //public string PrimaryKeyField { get; set; }
     public string ConnectionStringName { get; set; }
     public DBTable<T> Model { get; set; }
 
     public abstract void SetModel();
 
 
-    public DBList(string connectionStringName, string tableName = "guess", string primaryKeyName = "id") {
-      this.PrimaryKeyField = primaryKeyName;
+    public DBList(string connectionStringName, string tableName = "guess") {
+      //this.PrimaryKeyField = primaryKeyName;
       this.ConnectionStringName = connectionStringName;
       SetTableName(tableName);
       SetModel();
@@ -74,7 +74,7 @@ namespace Biggy {
           keyList.Add(this.Model.GetPrimaryKey(item).ToString());
         }
         var keySet = String.Join(",", keyList.ToArray());
-        var inStatement = this.Model.DelimitedPkColumnName + " IN (" + keySet + ")";
+        var inStatement = this.Model.PrimaryKeyMapping.DelimitedColumnName + " IN (" + keySet + ")";
         removed = this.Model.DeleteWhere(inStatement, "");
 
         this.Reload();
