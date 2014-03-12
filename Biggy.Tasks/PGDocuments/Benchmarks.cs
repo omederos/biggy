@@ -16,7 +16,7 @@ namespace Biggy.Perf.PGDocuments {
       Console.WriteLine("POSTGRES - LOAD A BUNCH OF DOCUMENTS INTO A TABLE");
       Console.WriteLine("===========================================================");
 
-      Console.WriteLine("Connecting to SQL Document Store...");
+      Console.WriteLine("Connecting to Postgres Document Store...");
 
       // Start clean and fresh . . .
       if (Benchmarks.TableExists("clientdocuments")) {
@@ -67,7 +67,7 @@ namespace Biggy.Perf.PGDocuments {
       sw.Start();
       _clientDocuments.Reload();
       sw.Stop();
-      Console.WriteLine("\t Loaded {0} documents from SQL Server in {1} ms", inserted, sw.ElapsedMilliseconds);
+      Console.WriteLine("\t Loaded {0} documents from Postgres in {1} ms", inserted, sw.ElapsedMilliseconds);
 
       sw.Reset();
       Console.WriteLine("Querying Middle 100 Documents");
