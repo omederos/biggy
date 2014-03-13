@@ -91,16 +91,6 @@ namespace Biggy.Postgres {
       base.Add(item);
     }
 
-    internal int getNextSerialPk(T item) {
-      this.addItem(item);
-      this.Remove(item);
-
-      var props = item.GetType().GetProperties();
-      var pk = props.First(p => p.Name == Model.PrimaryKeyMapping.PropertyName);
-      return (int)pk.GetValue(item) + 1;
-    }
-
-
     /// <summary>
     /// A high-performance bulk-insert that can drop 10,000 documents in about 900 ms
     /// </summary>
@@ -110,13 +100,6 @@ namespace Biggy.Postgres {
       int rowsAffected = 0;
 
       var first = items.First();
-
-      // We need to add and remove an item to get the starting serial pk:
-      int nextSerialPk = 0;
-      if (Model.PrimaryKeyMapping.IsAutoIncementing) {
-        // HACK: This is SO bad, but don't see ANY other way to do this:
-        nextSerialPk = this.getNextSerialPk(first);
-      }
       string insertClause = "";
       var sbSql = new StringBuilder("");
 
@@ -128,6 +111,16 @@ namespace Biggy.Postgres {
           DbCommand dbCommand = Model.CreateCommand(lockTableSQL, connection);
           dbCommand.Transaction = tdbTransaction;
           dbCommand.ExecuteNonQuery();
+
+          int nextSerialPk = 0;
+          if(Model.PrimaryKeyMapping.IsAutoIncementing)
+          {
+            // Now get the next serial Id. ** Need to do this within the transaction/table lock scope **:
+            string sequence = string.Format("\"{0}_{1}_seq\"", this.TableName, Model.PrimaryKeyMapping.ColumnName);
+            var sql_get_seq = string.Format("SELECT last_value FROM {0}", sequence);
+            dbCommand.CommandText = sql_get_seq;
+            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar());
+          }
 
           var paramCounter = 0;
           var rowValueCounter = 0;

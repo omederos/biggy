@@ -92,16 +92,6 @@ namespace Biggy.SQLServer {
       base.Add(item);
     }
 
-    // This is a hack mainly used by AddRange:
-    int getNextSerialPk(T item) {
-      this.addItem(item);
-      this.Remove(item);
-
-      var props = item.GetType().GetProperties();
-      var pk = props.First(p => p.Name == Model.PrimaryKeyMapping.PropertyName);
-      return (int)pk.GetValue(item) + 1;
-    }
-
     /// <summary>
     /// A high-performance bulk-insert that can drop 10,000 documents in about 500ms
     /// </summary>
@@ -113,12 +103,6 @@ namespace Biggy.SQLServer {
 
       var first = items.First();
 
-      // We need to add and remove an item to get the starting serial pk:
-      int nextSerialPk = 0;
-      if (Model.PrimaryKeyMapping.IsAutoIncementing) {
-        // HACK: This is SO bad, but don't see ANY other way to do this:
-        nextSerialPk = this.getNextSerialPk(first);
-      }
       string insertClause = "";
       var sbSql = new StringBuilder("");
 
@@ -130,6 +114,16 @@ namespace Biggy.SQLServer {
           DbCommand dbCommand = Model.CreateCommand(lockTableSQL, connection);
           dbCommand.Transaction = tdbTransaction;
           dbCommand.ExecuteNonQuery();
+
+          int nextSerialPk = 0;
+          if(Model.PrimaryKeyMapping.IsAutoIncementing)
+          {
+            // Now get the next Identity Id. ** Need to do this within the transaction/table lock scope **:
+            // NOTE: The application must have ownership permission on the table to do this!!
+            var sql_get_seq = string.Format("SELECT IDENT_CURRENT ('{0}' )", Model.DelimitedTableName);
+            dbCommand.CommandText = sql_get_seq;
+            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar());
+          }
 
           var paramCounter = 0;
           var rowValueCounter = 0;
@@ -220,6 +214,5 @@ namespace Biggy.SQLServer {
       base.Update(item);
       return this.Model.Update(expando);
     }
-
   }
 }

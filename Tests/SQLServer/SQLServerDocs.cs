@@ -123,7 +123,10 @@ namespace Tests.SQLServer {
         bulkList.Add(newClientDocument);
       }
       int inserted = ClientDocuments.AddRange(bulkList);
-      Assert.True(inserted == insertQty && ClientDocuments.Last().ClientDocumentId > insertQty);
+
+      // I have NO IDEA why this silliness suddenly became necessary (the .ToList().Last() bit). 
+      // This test worked fine last nite. Now says SQLDocumentList<> has no extension Last() JA - 3/12/2014
+      Assert.True(inserted == insertQty && ClientDocuments.ToList().Last().ClientDocumentId > insertQty);
     }
 
 
