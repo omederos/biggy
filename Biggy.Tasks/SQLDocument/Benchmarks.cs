@@ -19,7 +19,8 @@ namespace Biggy.Perf.SQLDocument {
       Console.WriteLine("Connecting to SQL Document Store...");
 
       // Start clean and fresh . . .
-      if(Benchmarks.TableExists("clientdocuments")) {
+      if (Benchmarks.TableExists("clientdocuments"))
+      {
         Benchmarks.DropTable("clientdocuments");
       }
 
@@ -28,11 +29,14 @@ namespace Biggy.Perf.SQLDocument {
       var sw = new Stopwatch();
 
       var addRange = new List<ClientDocument>();
-      for (int i = 0; i < 10000; i++) {
-        addRange.Add(new ClientDocument { 
-          LastName = "Conery " + i, 
-          FirstName = "Rob", 
-          Email = "rob@tekpub.com" });
+      for (int i = 0; i < 10000; i++)
+      {
+        addRange.Add(new ClientDocument
+        {
+          LastName = "Conery " + i,
+          FirstName = "Rob",
+          Email = "rob@tekpub.com"
+        });
       }
       sw.Start();
       var inserted = _clientDocuments.AddRange(addRange);
@@ -47,8 +51,10 @@ namespace Biggy.Perf.SQLDocument {
       sw.Reset();
 
       Console.WriteLine("Loading 100,000 documents");
-      for (int i = 0; i < 100000; i++) {
-        addRange.Add(new ClientDocument {
+      for (int i = 0; i < 100000; i++)
+      {
+        addRange.Add(new ClientDocument
+        {
           LastName = "Conery " + i,
           FirstName = "Rob",
           Email = "rob@tekpub.com"
@@ -74,7 +80,38 @@ namespace Biggy.Perf.SQLDocument {
       var found = _clientDocuments.Where(x => x.ClientDocumentId > 100 && x.ClientDocumentId < 500);
       sw.Stop();
       Console.WriteLine("\t Queried {0} documents in {1}ms", found.Count(), sw.ElapsedMilliseconds);
+
+      sw.Reset();
+      Console.WriteLine("Adds Items in a loop, follows by Bulk Insert");
+      if (TableExists("items"))
+      {
+        DropTable("items");
+      }
+      sw.Start();
+        var list = new List<Item>();
+        for (int i = 1; i < 6; i++) {
+          list.Add(new Item() {
+              Name = "Item no " + i
+          });
+        }
+        var items = new SQLDocumentList<Item>("chinook");
+        // 1. Add items in a loop
+        foreach (var item in list) {
+          items.Add(item);
+        }
+        // 2. Add items using AddRange...
+      items.AddRange(list);
+      sw.Stop();
+      Console.WriteLine("\t Added {0} items in a loop, then added same items as bullk insert in {1}", list.Count(), sw.ElapsedMilliseconds);
     }
+
+
+    class Item
+    {
+      public int Id { get; set; }
+      public string Name { get; set; }
+    }
+
 
 
     static void DropTable(string tableName) {

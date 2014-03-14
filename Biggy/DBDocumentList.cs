@@ -144,10 +144,10 @@ namespace Biggy {
         }
         dict["search"] = string.Join(",", vals);
       }
-      if(this.PKIsIdentity)
-      {
-        dict.Remove(this.PrimaryKeyField);
-      }
+      //if(this.PKIsIdentity)
+      //{
+      //  dict.Remove(this.PrimaryKeyField);
+      //}
       return expando;
     }
 

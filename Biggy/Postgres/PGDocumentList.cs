@@ -55,8 +55,8 @@ namespace Biggy.Postgres {
     public override void Add(T item) {
       this.addItem(item);
       if(Model.PrimaryKeyMapping.IsAutoIncementing) {
-        // Sync the JSON ID with the serial PK:
-        var ex = this.SetDataForDocument(item);
+        //// Sync the JSON ID with the serial PK:
+        //var ex = this.SetDataForDocument(item);
         this.Update(item);
       }
     }
@@ -119,7 +119,7 @@ namespace Biggy.Postgres {
             string sequence = string.Format("\"{0}_{1}_seq\"", this.TableName, Model.PrimaryKeyMapping.ColumnName);
             var sql_get_seq = string.Format("SELECT last_value FROM {0}", sequence);
             dbCommand.CommandText = sql_get_seq;
-            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar());
+            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar()) + 1;
           }
 
           var paramCounter = 0;
@@ -136,7 +136,9 @@ namespace Biggy.Postgres {
             var itemEx = SetDataForDocument(item);
             var itemSchema = itemEx as IDictionary<string, object>;
             var sbParamGroup = new StringBuilder();
-
+            if (itemSchema.ContainsKey(Model.PrimaryKeyMapping.PropertyName)) {
+              itemSchema.Remove(Model.PrimaryKeyMapping.PropertyName);
+            }
             if (ReferenceEquals(item, first)) {
               var sbFieldNames = new StringBuilder();
               foreach (var field in itemSchema) {
@@ -210,7 +212,7 @@ namespace Biggy.Postgres {
       }
       sb.Append(";");
       var sql = sb.ToString();
-      this.Model.Execute(sql, args.ToArray());
+      //this.Model.Execute(sql, args.ToArray());
       base.Update(item);
       return this.Model.Update(expando);
     }
