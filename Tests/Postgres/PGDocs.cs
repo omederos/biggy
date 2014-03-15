@@ -124,9 +124,8 @@ namespace Tests.Postgres {
       }
       int inserted = ClientDocuments.AddRange(bulkList);
 
-      // I have NO IDEA why this silliness suddenly became necessary (the .ToList().Last() bit). 
-      // This test worked fine last nite. Now says PGDocumentList<> has no extension Last() JA - 3/12/2014
-      Assert.True(inserted == insertQty && ClientDocuments.ToList().Last().ClientDocumentId > insertQty);
+      var last = ClientDocuments.Last();
+      Assert.True(inserted == insertQty && last.ClientDocumentId >= insertQty);
     }
 
 

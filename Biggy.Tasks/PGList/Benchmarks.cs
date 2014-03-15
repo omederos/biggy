@@ -179,7 +179,7 @@ namespace Biggy.Perf.PGList
           + "AND  table_name = '{0}'";
       string sql = string.Format(select, tableName);
       var Model = new PGTable<dynamic>(_connectionStringName);
-      var query = Model.Query<Client>(sql);
+      var query = Model.Query<dynamic>(sql);
       if (query.Count() > 0)
       {
         exists = true;
