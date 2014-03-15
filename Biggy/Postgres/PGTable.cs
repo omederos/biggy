@@ -80,5 +80,22 @@ namespace Biggy.Postgres {
     protected override string DbDelimiterFormatString {
       get { return "\"{0}\""; }
     }
+
+    protected override bool columnIsAutoIncrementing(string columnName) {
+      string seq = "SELECT last_value FROM \"{0}_{1}_seq\"";
+      string sql = string.Format(seq, this.TableName, columnName);
+      long value = 0;
+      try {
+        var result = this.Scalar(sql);
+        value = Convert.ToInt32(result);
+        if (value > 0) return true;
+      }
+      catch (Exception ex) {
+        if (ex.Message.Contains("does not exist")) {
+          return false;
+        }
+      }
+      return false;
+    }
   }
 }

@@ -29,6 +29,7 @@ namespace Biggy
     protected abstract string GetSingleSelect(string where);
     public abstract string GetInsertReturnValueSQL();
     protected abstract string DbDelimiterFormatString { get; }
+    protected abstract bool columnIsAutoIncrementing(string columnName);
 
 
     public virtual string DelimitedTableName {
@@ -43,45 +44,54 @@ namespace Biggy
     public virtual DbColumnMappingLookup PropertyColumnMappings { get; private set; }
 
     protected void mapDbColumns() {
+      this.PropertyColumnMappings = new DbColumnMappingLookup(this.DbDelimiterFormatString);
       var columnNames = this.getTableColumns();
-      if (this.PropertyColumnMappings == null) {
-        this.PropertyColumnMappings = new DbColumnMappingLookup(this.DbDelimiterFormatString);
-      }
-      var item = new T();
-      var props = item.GetType().GetProperties();
-      string replaceString = "[^a-zA-Z1-9]";
-      var rgx = new Regex(replaceString);
-
       if(columnNames.Count > 0) {
-        // Do this only once, instead of inside the loop below:
-        var pkProperty = props.FirstOrDefault(p => p.GetCustomAttributes(false).Any(a => a.GetType() == typeof(PrimaryKeyAttribute)));
-        PrimaryKeyAttribute pkAttribute = null;
-        if (pkProperty != null) {
-          pkAttribute = pkProperty.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(PrimaryKeyAttribute)) as PrimaryKeyAttribute;
-        }
+        var item = new T();
+        var itemType = item.GetType();
+        var props = itemType.GetProperties();
+        string replaceString = "[^a-zA-Z1-9]";
+        var rgx = new Regex(replaceString);
 
+        // First map all the columns. If an explicit attribute mapping exists, use it. Otherwise, math 'em up:
         foreach (var property in props) {
           string propertyName = rgx.Replace(property.Name.ToLower(), "");
           string columnName = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == propertyName);
 
-          // Hateful as this is, if we allow setting of attributes, we need to check for those FIRST,
-          // otherwise the client will be confused by inconsistent behavior. 
-          DbColumnAttribute mappedColumnAttribute = null;
-          var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnAttribute));
-          if (attribute != null) {
-            // Use the column name found in the attribute:
-            mappedColumnAttribute = attribute as DbColumnAttribute;
-            columnName = mappedColumnAttribute.Name;
-          } 
-          var newMapping = this.PropertyColumnMappings.Add(columnName, property.Name);
-          newMapping.DataType = property.GetType();
-          if (!string.IsNullOrWhiteSpace(columnName)){
-            if (ReferenceEquals(pkProperty, property)){
-              this.PrimaryKeyMapping = newMapping;
-              pkAttribute = pkProperty.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(PrimaryKeyAttribute)) as PrimaryKeyAttribute;
-              this.PrimaryKeyMapping.IsPrimaryKey = true;
-              this.PrimaryKeyMapping.IsAutoIncementing = pkAttribute.IsAutoIncrementing;
+          if (columnName != null) {
+            // Just map it:
+            var newMapping = this.PropertyColumnMappings.Add(columnName, property.Name);
+            newMapping.DataType = property.GetType();
+          } else {
+            // Look for a custom column name attribute:
+            DbColumnAttribute mappedColumnAttribute = null;
+            var attribute = property.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(DbColumnAttribute));
+            if (attribute != null) {
+              // Use the column name found in the attribute:
+              mappedColumnAttribute = attribute as DbColumnAttribute;
+              columnName = mappedColumnAttribute.Name;
             }
+            var newMapping = this.PropertyColumnMappings.Add(columnName, property.Name);
+            newMapping.DataType = property.GetType();
+          }
+        }
+
+        // Now, find the PK  column. If one is explicitly set with an attribute, use that:
+        var pkProperty = props.FirstOrDefault(p => p.GetCustomAttributes(false).Any(a => a.GetType() == typeof(PrimaryKeyAttribute)));
+        PrimaryKeyAttribute pkAttribute = null;
+        if (pkProperty != null) {
+          pkAttribute = pkProperty.GetCustomAttributes(false).FirstOrDefault(a => a.GetType() == typeof(PrimaryKeyAttribute)) as PrimaryKeyAttribute;
+          this.PrimaryKeyMapping = this.PropertyColumnMappings.FindByProperty(pkProperty.Name);
+          this.PrimaryKeyMapping.IsPrimaryKey = true;
+          this.PrimaryKeyMapping.IsAutoIncementing = pkAttribute.IsAutoIncrementing;
+        } else {
+          // Otherwise, try to find one:
+          string pkCandidate = rgx.Replace(itemType.Name.ToLower(), "") + "id";
+          string columnMatch = columnNames.FirstOrDefault(c => rgx.Replace(c.ToLower(), "") == pkCandidate);
+          if (columnMatch != null) {
+            this.PrimaryKeyMapping = this.PropertyColumnMappings.FindByColumn(columnMatch);
+            bool isAuto = this.columnIsAutoIncrementing(this.PrimaryKeyMapping.ColumnName);
+            this.PrimaryKeyMapping.IsAutoIncementing = isAuto;
           }
         }
       }

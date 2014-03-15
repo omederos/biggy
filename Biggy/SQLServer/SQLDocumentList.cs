@@ -116,13 +116,16 @@ namespace Biggy.SQLServer {
           dbCommand.ExecuteNonQuery();
 
           int nextSerialPk = 0;
-          if(Model.PrimaryKeyMapping.IsAutoIncementing)
-          {
+          if(Model.PrimaryKeyMapping.IsAutoIncementing) {
             // Now get the next Identity Id. ** Need to do this within the transaction/table lock scope **:
             // NOTE: The application must have ownership permission on the table to do this!!
             var sql_get_seq = string.Format("SELECT IDENT_CURRENT ('{0}' )", Model.DelimitedTableName);
             dbCommand.CommandText = sql_get_seq;
-            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar()) + 1;
+            // if this is a fresh sequence, the "seed" value is returned. We will assume 1:
+            nextSerialPk = Convert.ToInt32(dbCommand.ExecuteScalar());
+            if(nextSerialPk > 1) {
+              nextSerialPk++;
+            }
           }
 
           var paramCounter = 0;
@@ -139,7 +142,7 @@ namespace Biggy.SQLServer {
             var itemEx = SetDataForDocument(item);
             var itemSchema = itemEx as IDictionary<string, object>;
             var sbParamGroup = new StringBuilder();
-            if (itemSchema.ContainsKey(Model.PrimaryKeyMapping.PropertyName)) {
+            if (itemSchema.ContainsKey(Model.PrimaryKeyMapping.PropertyName) && Model.PrimaryKeyMapping.IsAutoIncementing) {
               itemSchema.Remove(Model.PrimaryKeyMapping.PropertyName);
             }
 

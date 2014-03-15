@@ -91,5 +91,21 @@ namespace Biggy.SQLServer {
     protected override string DbDelimiterFormatString {
       get { return "[{0}]"; }
     }
+
+    protected override bool columnIsAutoIncrementing(string columnName) {
+      var select = "SELECT columnproperty(object_id('{0}'),'{1}','IsIdentity') AS IsIdentity";
+      var sql = string.Format(select, this.TableName, columnName);
+      var result = this.Scalar(sql);
+      try {
+        int value = Convert.ToInt32(result);
+        if (value > 0) {
+          return true;
+        }
+      } 
+      catch (Exception) {
+        return false;
+      }
+      return false;
+    }
   }
 }
