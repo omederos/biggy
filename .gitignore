@@ -21,7 +21,7 @@ build/
 [Oo]bj/
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
-!packages/*/build/
+packages/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/
@@ -50,6 +50,9 @@ build/
 *.pidb
 *.log
 *.scc
+
+# NCrunch Files
+_NCrunch*
 
 # Visual C++ cache files
 ipch/
@@ -154,3 +157,6 @@ $RECYCLE.BIN/
 
 # Mac crap
 .DS_Store
+
+# Generated NuGet packages
+*.nupkg

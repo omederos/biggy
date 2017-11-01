@@ -30,7 +30,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -42,13 +47,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Dynamics.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="Reads.cs" />
-    <Compile Include="Writes.cs" />
+    <Compile Include="Postgres\FullText.cs" />
+    <Compile Include="Postgres\PGList.cs" />
+    <Compile Include="Postgres\PGDocs.cs" />
+    <Compile Include="Postgres\PGList_Column_Mapping.cs" />
+    <Compile Include="Postgres\PGList_Attribute_Mapping.cs" />
+    <Compile Include="SQLServer\SQLServerList_Attribute_Mapping.cs" />
+    <Compile Include="SQLServer\SQLServerList_Column_Mapping.cs" />
+    <Compile Include="SQLServer\SQLServerList.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SQLServer\SQLServerDocs.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
+    <None Include="DbScripts\CreateSqlServer.bat" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -56,6 +69,19 @@
       <Project>{49dbd996-032d-4b58-b35a-2621da0eaeaf}</Project>
       <Name>Biggy</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="JSON\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="DbScripts\chinook_pg_serial_pk.sql" />
+    <Content Include="DbScripts\chinook_pg_serial_pk_proper_naming.sql" />
+    <Content Include="DbScripts\Chinook_SqlServer.sql" />
+    <Content Include="DbScripts\Chinook_SqlServer_AutoIncrementPKs.sql" />
+    <Content Include="DbScripts\dvdrental_postgres.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
